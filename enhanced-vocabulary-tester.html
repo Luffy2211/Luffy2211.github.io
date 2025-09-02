@@ -1,0 +1,1980 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Vocabulary Tester</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36D399',
+                        danger: '#F87272',
+                        neutral: '#F3F4F6',
+                        dark: '#1F2937'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+            .transition-custom {
+                transition: all 0.3s ease;
+            }
+            .option-hover {
+                @apply hover:bg-primary/5 transition-all duration-200 cursor-pointer;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-dark">
+    <!-- 顶部导航栏 -->
+    <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-book text-primary text-2xl"></i>
+                <h1 class="text-xl font-bold text-primary">VocabMaster</h1>
+            </div>
+            
+            <nav class="hidden md:flex space-x-6">
+                <button id="nav-import" class="nav-btn active py-2 font-medium text-primary border-b-2 border-primary">
+                    <i class="fa fa-upload mr-1"></i> Import
+                </button>
+                <button id="nav-manage" class="nav-btn py-2 font-medium text-gray-600 hover:text-primary transition-custom">
+                    <i class="fa fa-list mr-1"></i> Manage
+                </button>
+                <button id="nav-test" class="nav-btn py-2 font-medium text-gray-600 hover:text-primary transition-custom">
+                    <i class="fa fa-check-square-o mr-1"></i> Test
+                </button>
+                <button id="nav-results" class="nav-btn py-2 font-medium text-gray-600 hover:text-primary transition-custom">
+                    <i class="fa fa-bar-chart mr-1"></i> Results
+                </button>
+            </nav>
+            
+            <button id="mobile-menu-btn" class="md:hidden text-gray-600 focus:outline-none">
+                <i class="fa fa-bars text-xl"></i>
+            </button>
+        </div>
+        
+        <!-- 移动端菜单 -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t">
+            <div class="container mx-auto px-4 py-2 flex flex-col space-y-3">
+                <button id="mobile-import" class="mobile-nav-btn active py-2 font-medium text-left text-primary">
+                    <i class="fa fa-upload mr-2"></i> Import Words
+                </button>
+                <button id="mobile-manage" class="mobile-nav-btn py-2 font-medium text-left text-gray-600">
+                    <i class="fa fa-list mr-2"></i> Manage Words
+                </button>
+                <button id="mobile-test" class="mobile-nav-btn py-2 font-medium text-left text-gray-600">
+                    <i class="fa fa-check-square-o mr-2"></i> Take Test
+                </button>
+                <button id="mobile-results" class="mobile-nav-btn py-2 font-medium text-left text-gray-600">
+                    <i class="fa fa-bar-chart mr-2"></i> Test Results
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 pt-24 pb-16 min-h-screen">
+        <!-- 导入单词模块 -->
+        <section id="import-section" class="section active">
+            <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8">
+                <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center">
+                    <i class="fa fa-upload text-primary mr-3"></i> Import Vocabulary
+                </h2>
+                
+                <div class="mb-6">
+                    <p class="text-gray-600 mb-4">
+                        Import English words with or without their Chinese meanings. If you only provide English words, 
+                        the system will automatically fetch their basic Chinese definitions.
+                    </p>
+                    
+                    <div class="mb-4">
+                        <label for="word-input" class="block text-sm font-medium text-gray-700 mb-1">
+                            Enter words (one per line, format: English,Chinese)
+                        </label>
+                        <textarea 
+                            id="word-input" 
+                            rows="8" 
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-custom"
+                            placeholder="Example:
+apple,苹果
+book
+computer,电脑
+teacher"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row gap-3 mb-6">
+                        <button id="import-btn" class="flex-1 bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-custom flex items-center justify-center">
+                            <i class="fa fa-download mr-2"></i> Import Words
+                        </button>
+                        <button id="clear-input-btn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 px-4 rounded-lg transition-custom">
+                            Clear Input
+                        </button>
+                    </div>
+                    
+                    <div class="border-t pt-4">
+                        <h3 class="font-medium text-gray-700 mb-2">Or import from file</h3>
+                        <div class="flex items-center justify-center w-full">
+                            <label for="file-upload" class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-custom">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <i class="fa fa-file-text-o text-3xl text-gray-400 mb-2"></i>
+                                    <p class="mb-1 text-sm text-gray-600"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                                    <p class="text-xs text-gray-500">TXT, XLSX, XLS files supported</p>
+                                </div>
+                                <input id="file-upload" type="file" class="hidden" accept=".txt, .xlsx, .xls" />
+                            </label>
+                        </div>
+                        
+                        <div class="mt-4 p-3 bg-neutral rounded-lg">
+                            <h4 class="text-sm font-medium text-gray-700 mb-2">File Format Instructions:</h4>
+                            <ul class="text-xs text-gray-600 space-y-1">
+                                <li>• For text files: One word per line, optional format: English,Chinese</li>
+                                <li>• For Excel files: First column - English words, Second column - Chinese meanings (optional)</li>
+                                <li>• System will automatically fetch definitions for words without Chinese meanings</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="import-status" class="hidden mb-4 p-4 rounded-lg">
+                    <div class="flex items-center">
+                        <i id="status-icon" class="mr-2"></i>
+                        <span id="status-message"></span>
+                    </div>
+                    <div id="progress-container" class="mt-3 hidden">
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div id="progress-bar" class="bg-primary h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <p id="progress-text" class="text-xs text-gray-500 mt-1">Processing 0/0 words</p>
+                    </div>
+                </div>
+                
+                <div id="import-results" class="hidden">
+                    <h3 class="font-bold text-lg mb-3 text-gray-700">Import Results</h3>
+                    <div class="overflow-auto max-h-64 border border-gray-200 rounded-lg">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">English</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Chinese</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="import-results-body" class="bg-white divide-y divide-gray-200">
+                                <!-- 结果将在这里动态添加 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 单词管理模块 -->
+        <section id="manage-section" class="section hidden">
+            <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8">
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                        <i class="fa fa-list text-primary mr-3"></i> Manage Vocabulary
+                    </h2>
+                    
+                    <div class="mt-4 md:mt-0 flex flex-col sm:flex-row gap-3">
+                        <div class="relative">
+                            <input 
+                                id="search-words" 
+                                type="text" 
+                                placeholder="Search words..." 
+                                class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-custom w-full sm:w-64"
+                            >
+                            <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                        <button id="delete-selected-btn" class="bg-danger hover:bg-danger/90 text-white font-medium py-2 px-4 rounded-lg transition-custom disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <i class="fa fa-trash mr-1"></i> Delete Selected
+                        </button>
+                        <button id="delete-all-btn" class="bg-gray-700 hover:bg-gray-800 text-white font-medium py-2 px-4 rounded-lg transition-custom">
+                            <i class="fa fa-trash-o mr-1"></i> Delete All
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="no-words-message" class="hidden py-16 text-center">
+                    <i class="fa fa-book text-5xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500 text-lg">No vocabulary words found.</p>
+                    <p class="text-gray-400 mt-2">Import some words to get started.</p>
+                    <button id="go-to-import-btn" class="mt-4 bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-lg transition-custom">
+                        <i class="fa fa-upload mr-1"></i> Import Words
+                    </button>
+                </div>
+                
+                <div id="words-container" class="overflow-auto max-h-[60vh] rounded-lg border border-gray-200">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50 sticky top-0 z-10">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                                    <input type="checkbox" id="select-all-words" class="rounded border-gray-300 text-primary focus:ring-primary">
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">English</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Chinese</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Added</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="words-list" class="bg-white divide-y divide-gray-200">
+                            <!-- 单词列表将在这里动态添加 -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-4 flex justify-between items-center">
+                    <p class="text-sm text-gray-600">
+                        <span id="words-count">0</span> words in total
+                    </p>
+                    <div class="flex gap-2">
+                        <button id="export-words-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium py-2 px-4 rounded-lg transition-custom disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <i class="fa fa-download mr-1"></i> Export
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 测试模块 -->
+        <section id="test-section" class="section hidden">
+            <div class="max-w-2xl mx-auto">
+                <!-- 测试设置 -->
+                <div id="test-settings" class="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-6">
+                    <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center">
+                        <i class="fa fa-cog text-primary mr-3"></i> Test Settings
+                    </h2>
+                    
+                    <div class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Test Type</label>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="test-type" value="english-to-chinese" class="text-primary focus:ring-primary">
+                                    <span class="ml-2 text-gray-700">English → Chinese (Type)</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="test-type" value="chinese-to-english" class="text-primary focus:ring-primary">
+                                    <span class="ml-2 text-gray-700">Chinese → English (Type)</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="test-type" value="english-to-chinese-multiple" class="text-primary focus:ring-primary" checked>
+                                    <span class="ml-2 text-gray-700">English → Chinese (Multiple Choice)</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="test-type" value="sentence-completion" class="text-primary focus:ring-primary">
+                                    <span class="ml-2 text-gray-700">Sentence Completion</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Order</label>
+                            <div class="flex gap-4">
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="test-order" value="random" class="text-primary focus:ring-primary" checked>
+                                    <span class="ml-2 text-gray-700">Random</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="test-order" value="sequential" class="text-primary focus:ring-primary">
+                                    <span class="ml-2 text-gray-700">Sequential</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="test-count" class="block text-sm font-medium text-gray-700 mb-1">Number of Words to Test</label>
+                            <div class="flex items-center">
+                                <input 
+                                    type="number" 
+                                    id="test-count" 
+                                    min="1" 
+                                    max="100" 
+                                    value="10" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-custom"
+                                >
+                                <span class="ml-3 text-gray-500 text-sm" id="max-words-text">max: 0</span>
+                            </div>
+                        </div>
+                        
+                        <button id="start-test-btn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-custom disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <i class="fa fa-play mr-2"></i> Start Test
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 测试进行中 -->
+                <div id="test-in-progress" class="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-6 hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                            <i class="fa fa-check-square-o text-primary mr-3"></i> Taking Test
+                        </h2>
+                        <div class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
+                            <span id="current-question">1</span>/<span id="total-questions">10</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 传统输入式测试 -->
+                    <div id="input-test-container" class="mb-8 hidden">
+                        <p class="text-gray-500 text-sm mb-2">Question</p>
+                        <div class="bg-neutral p-4 rounded-lg mb-6">
+                            <p id="test-question" class="text-xl font-medium text-gray-800"></p>
+                        </div>
+                        
+                        <p class="text-gray-500 text-sm mb-2">Your Answer</p>
+                        <input 
+                            type="text" 
+                            id="test-answer" 
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-custom text-lg"
+                            placeholder="Enter your answer..."
+                            autocomplete="off"
+                        >
+                    </div>
+                    
+                    <!-- 选择题测试 -->
+                    <div id="multiple-choice-container" class="mb-8 hidden">
+                        <p class="text-gray-500 text-sm mb-2">Question</p>
+                        <div class="bg-neutral p-4 rounded-lg mb-6">
+                            <p id="mc-question" class="text-xl font-medium text-gray-800"></p>
+                        </div>
+                        
+                        <p class="text-gray-500 text-sm mb-2">Choose the correct answer</p>
+                        <div id="options-container" class="space-y-3">
+                            <!-- 选项将在这里动态添加 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 句子填空测试 -->
+                    <div id="sentence-test-container" class="mb-8 hidden">
+                        <p class="text-gray-500 text-sm mb-2">Complete the sentence</p>
+                        <div class="bg-neutral p-4 rounded-lg mb-6">
+                            <p id="sentence-question" class="text-xl font-medium text-gray-800"></p>
+                        </div>
+                        
+                        <p class="text-gray-500 text-sm mb-2">Choose the best word to complete the sentence</p>
+                        <div id="sentence-options-container" class="space-y-3">
+                            <!-- 选项将在这里动态添加 -->
+                        </div>
+                    </div>
+                    
+                    <div id="test-navigation" class="flex justify-between">
+                        <button id="skip-question-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-6 rounded-lg transition-custom">
+                            Skip
+                        </button>
+                        <button id="submit-answer-btn" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-lg transition-custom">
+                            Submit Answer
+                        </button>
+                    </div>
+                    
+                    <!-- 答案反馈 -->
+                    <div id="answer-feedback" class="mt-6 p-4 rounded-lg hidden">
+                        <div class="flex items-start">
+                            <i id="feedback-icon" class="text-xl mt-0.5 mr-3"></i>
+                            <div>
+                                <h4 id="feedback-title" class="font-medium"></h4>
+                                <p id="feedback-message" class="mt-1 text-gray-600"></p>
+                            </div>
+                        </div>
+                        <button id="next-question-btn" class="mt-4 bg-primary/10 hover:bg-primary/20 text-primary font-medium py-2 px-4 rounded-lg transition-custom">
+                            Next Question
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 测试结果 -->
+                <div id="test-results" class="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-6 hidden">
+                    <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center">
+                        <i class="fa fa-trophy text-primary mr-3"></i> Test Results
+                    </h2>
+                    
+                    <div class="flex flex-col md:flex-row gap-6 mb-8">
+                        <div class="flex-1 bg-neutral rounded-xl p-6 text-center">
+                            <p class="text-gray-500 mb-1">Score</p>
+                            <p id="test-score" class="text-4xl font-bold text-primary">0%</p>
+                        </div>
+                        <div class="flex-1 bg-neutral rounded-xl p-6 text-center">
+                            <p class="text-gray-500 mb-1">Correct Answers</p>
+                            <p id="correct-answers" class="text-4xl font-bold text-secondary">0</p>
+                        </div>
+                        <div class="flex-1 bg-neutral rounded-xl p-6 text-center">
+                            <p class="text-gray-500 mb-1">Incorrect Answers</p>
+                            <p id="incorrect-answers" class="text-4xl font-bold text-danger">0</p>
+                        </div>
+                    </div>
+                    
+                    <h3 class="font-bold text-lg mb-3 text-gray-700">Review Answers</h3>
+                    <div class="overflow-auto max-h-64 border border-gray-200 rounded-lg mb-6">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Question</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Your Answer</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correct Answer</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Result</th>
+                                </tr>
+                            </thead>
+                            <tbody id="review-answers" class="bg-white divide-y divide-gray-200">
+                                <!-- 答案回顾将在这里动态添加 -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button id="restart-test-btn" class="flex-1 bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-custom">
+                            <i class="fa fa-refresh mr-2"></i> Take Another Test
+                        </button>
+                        <button id="save-results-btn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 px-4 rounded-lg transition-custom">
+                            <i class="fa fa-save mr-2"></i> Save Results
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 测试结果历史模块 -->
+        <section id="results-section" class="section hidden">
+            <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8">
+                <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center">
+                    <i class="fa fa-bar-chart text-primary mr-3"></i> Test History
+                </h2>
+                
+                <div id="no-results-message" class="hidden py-16 text-center">
+                    <i class="fa fa-line-chart text-5xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500 text-lg">No test results found.</p>
+                    <p class="text-gray-400 mt-2">Take a test to see your results here.</p>
+                    <button id="go-to-test-btn" class="mt-4 bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-lg transition-custom">
+                        <i class="fa fa-check-square-o mr-1"></i> Take a Test
+                    </button>
+                </div>
+                
+                <div id="results-container" class="space-y-4">
+                    <!-- 结果卡片将在这里动态添加 -->
+                </div>
+                
+                <div class="mt-6 flex justify-end">
+                    <button id="clear-history-btn" class="bg-danger hover:bg-danger/90 text-white font-medium py-2 px-4 rounded-lg transition-custom disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fa fa-trash mr-1"></i> Clear All History
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white py-6">
+        <div class="container mx-auto px-4 text-center">
+            <p class="mb-2">VocabMaster - Improve your English vocabulary</p>
+            <p class="text-sm text-gray-400">© 2023 VocabMaster. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- 确认对话框 -->
+    <div id="confirm-dialog" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
+            <h3 id="confirm-title" class="text-xl font-bold text-gray-800 mb-3">Confirm Action</h3>
+            <p id="confirm-message" class="text-gray-600 mb-6">Are you sure you want to proceed?</p>
+            <div class="flex gap-3">
+                <button id="confirm-cancel" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-custom">
+                    Cancel
+                </button>
+                <button id="confirm-ok" class="flex-1 bg-danger hover:bg-danger/90 text-white font-medium py-2 px-4 rounded-lg transition-custom">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 句子库 - 用于句子填空测试
+        const SentenceBank = {
+            sentences: [
+                { sentence: "I ate an [______] for breakfast.", word: "apple" },
+                { sentence: "She is reading a [______] about history.", word: "book" },
+                { sentence: "He uses a [______] to work from home.", word: "computer" },
+                { sentence: "My [______] taught me how to solve this problem.", word: "teacher" },
+                { sentence: "As a [______], I need to study every day.", word: "student" },
+                { sentence: "We go to [______] from Monday to Friday.", word: "school" },
+                { sentence: "She is my best [______] and we often play together.", word: "friend" },
+                { sentence: "I live with my [______] in a small house.", word: "family" },
+                { sentence: "Drinking enough [______] is important for health.", word: "water" },
+                { sentence: "We need [______] to survive.", word: "food" },
+                { sentence: "They bought a new [______] in the city center.", word: "house" },
+                { sentence: "He drives a red [______] to work.", word: "car" },
+                { sentence: "A tall [______] stands in front of our house.", word: "tree" },
+                { sentence: "She received a bunch of beautiful [______] on her birthday.", word: "flower" },
+                { sentence: "The [______] shines brightly during the day.", word: "sun" },
+                { sentence: "The [______] looks beautiful tonight.", word: "moon" },
+                { sentence: "We can see many [______] in the sky at night.", word: "star" },
+                { sentence: "We don't have enough [______] to finish the task.", word: "time" },
+                { sentence: "I will see you another [______].", word: "day" },
+                { sentence: "I like to read books at [______].", word: "night" }
+            ],
+            
+            // 获取与指定单词匹配的句子
+            getSentenceForWord(word) {
+                return this.sentences.find(s => s.word.toLowerCase() === word.toLowerCase());
+            },
+            
+            // 为句子创建选项
+            createOptions(correctWord, allWords, count = 4) {
+                // 筛选出与正确答案不同的单词
+                const otherWords = allWords
+                    .filter(w => w.english.toLowerCase() !== correctWord.toLowerCase())
+                    .map(w => w.english);
+                
+                // 随机选择其他选项
+                const shuffled = [...otherWords].sort(() => 0.5 - Math.random());
+                const options = [correctWord, ...shuffled.slice(0, count - 1)];
+                
+                // 打乱选项顺序
+                return options.sort(() => 0.5 - Math.random());
+            }
+        };
+
+        // 数据存储和管理
+        const VocabData = {
+            // 获取所有单词
+            getWords() {
+                const words = localStorage.getItem('vocabWords');
+                return words ? JSON.parse(words) : [];
+            },
+            
+            // 保存单词
+            saveWords(words) {
+                localStorage.setItem('vocabWords', JSON.stringify(words));
+                this.triggerUpdate();
+            },
+            
+            // 添加单词
+            addWord(word) {
+                const words = this.getWords();
+                // 检查是否已存在相同的英文单词
+                const existingIndex = words.findIndex(w => w.english.toLowerCase() === word.english.toLowerCase());
+                
+                if (existingIndex >= 0) {
+                    // 更新已存在的单词
+                    words[existingIndex] = {
+                        ...words[existingIndex],
+                        ...word,
+                        id: words[existingIndex].id // 保持原ID
+                    };
+                } else {
+                    // 添加新单词
+                    const newWord = {
+                        id: Date.now(),
+                        english: word.english.trim(),
+                        chinese: word.chinese ? word.chinese.trim() : '',
+                        addedDate: new Date().toISOString().split('T')[0]
+                    };
+                    words.push(newWord);
+                }
+                
+                this.saveWords(words);
+                return true;
+            },
+            
+            // 批量添加单词
+            addWords(words) {
+                const results = [];
+                words.forEach(word => {
+                    try {
+                        this.addWord(word);
+                        results.push({
+                            ...word,
+                            status: 'success'
+                        });
+                    } catch (error) {
+                        results.push({
+                            ...word,
+                            status: 'error',
+                            error: error.message
+                        });
+                    }
+                });
+                return results;
+            },
+            
+            // 删除单词
+            deleteWord(id) {
+                let words = this.getWords();
+                words = words.filter(word => word.id !== id);
+                this.saveWords(words);
+            },
+            
+            // 批量删除单词
+            deleteWords(ids) {
+                let words = this.getWords();
+                words = words.filter(word => !ids.includes(word.id));
+                this.saveWords(words);
+            },
+            
+            // 清空所有单词
+            clearAllWords() {
+                this.saveWords([]);
+            },
+            
+            // 搜索单词
+            searchWords(query) {
+                if (!query) return this.getWords();
+                const lowerQuery = query.toLowerCase();
+                return this.getWords().filter(word => 
+                    word.english.toLowerCase().includes(lowerQuery) || 
+                    word.chinese.toLowerCase().includes(lowerQuery)
+                );
+            },
+            
+            // 随机获取指定数量的单词
+            getRandomWords(count) {
+                const words = [...this.getWords()];
+                // 打乱顺序
+                words.sort(() => 0.5 - Math.random());
+                // 返回指定数量的单词
+                return words.slice(0, count);
+            },
+            
+            // 获取随机中文释义选项
+            getRandomChineseOptions(correctChinese, count = 4) {
+                const allWords = this.getWords();
+                // 筛选出与正确答案不同的释义
+                const otherOptions = allWords
+                    .filter(w => w.chinese.toLowerCase() !== correctChinese.toLowerCase())
+                    .map(w => w.chinese);
+                
+                // 随机选择其他选项
+                const shuffled = [...otherOptions].sort(() => 0.5 - Math.random());
+                const options = [correctChinese, ...shuffled.slice(0, count - 1)];
+                
+                // 打乱选项顺序
+                return options.sort(() => 0.5 - Math.random());
+            },
+            
+            // 事件触发器
+            onUpdate(callback) {
+                this.updateCallback = callback;
+            },
+            
+            triggerUpdate() {
+                if (this.updateCallback) {
+                    this.updateCallback();
+                }
+            }
+        };
+
+        // 测试结果数据管理
+        const TestResults = {
+            // 获取所有测试结果
+            getResults() {
+                const results = localStorage.getItem('testResults');
+                return results ? JSON.parse(results) : [];
+            },
+            
+            // 保存测试结果
+            saveResult(result) {
+                const results = this.getResults();
+                const newResult = {
+                    id: Date.now(),
+                    date: new Date().toISOString(),
+                    ...result
+                };
+                results.push(newResult);
+                localStorage.setItem('testResults', JSON.stringify(results));
+                this.triggerUpdate();
+                return newResult;
+            },
+            
+            // 删除测试结果
+            deleteResult(id) {
+                let results = this.getResults();
+                results = results.filter(result => result.id !== id);
+                localStorage.setItem('testResults', JSON.stringify(results));
+                this.triggerUpdate();
+            },
+            
+            // 清空所有测试结果
+            clearAllResults() {
+                localStorage.setItem('testResults', JSON.stringify([]));
+                this.triggerUpdate();
+            },
+            
+            // 事件触发器
+            onUpdate(callback) {
+                this.updateCallback = callback;
+            },
+            
+            triggerUpdate() {
+                if (this.updateCallback) {
+                    this.updateCallback();
+                }
+            }
+        };
+
+        // 单词释义查询服务
+        const DictionaryService = {
+            // 模拟词典数据 - 常用单词
+            mockDictionary: {
+                "apple": "苹果",
+                "book": "书",
+                "computer": "电脑",
+                "teacher": "老师",
+                "student": "学生",
+                "school": "学校",
+                "friend": "朋友",
+                "family": "家庭",
+                "water": "水",
+                "food": "食物",
+                "house": "房子",
+                "car": "汽车",
+                "tree": "树",
+                "flower": "花",
+                "sun": "太阳",
+                "moon": "月亮",
+                "star": "星星",
+                "time": "时间",
+                "day": "天",
+                "night": "夜晚",
+                "money": "钱",
+                "work": "工作",
+                "study": "学习",
+                "love": "爱",
+                "happy": "快乐的",
+                "sad": "悲伤的",
+                "good": "好的",
+                "bad": "坏的",
+                "big": "大的",
+                "small": "小的",
+                "fast": "快的",
+                "slow": "慢的",
+                "new": "新的",
+                "old": "旧的",
+                "high": "高的",
+                "low": "低的",
+                "hot": "热的",
+                "cold": "冷的",
+                "right": "正确的",
+                "wrong": "错误的"
+            },
+            
+            // 获取单词释义
+            async getDefinition(word, progressCallback) {
+                return new Promise((resolve) => {
+                    // 模拟网络延迟
+                    setTimeout(() => {
+                        // 先检查模拟词典
+                        if (this.mockDictionary[word.toLowerCase()]) {
+                            resolve(this.mockDictionary[word.toLowerCase()]);
+                        } else {
+                            // 对于不在模拟词典中的单词，使用更智能的生成方式
+                            let generatedDefinition = "";
+                            
+                            // 基于常见后缀生成更合理的释义
+                            if (word.endsWith("tion")) {
+                                generatedDefinition = word.slice(0, -4) + "化，作用";
+                            } else if (word.endsWith("ment")) {
+                                generatedDefinition = word.slice(0, -4) + "行为，结果";
+                            } else if (word.endsWith("ly")) {
+                                generatedDefinition = word.slice(0, -2) + "地（副词）";
+                            } else if (word.endsWith("able") || word.endsWith("ible")) {
+                                generatedDefinition = "可" + word.slice(0, -4) + "的";
+                            } else if (word.endsWith("ful")) {
+                                generatedDefinition = word.slice(0, -3) + "的，充满";
+                            } else if (word.endsWith("less")) {
+                                generatedDefinition = "无" + word.slice(0, -4) + "的";
+                            } else if (word.endsWith("er") || word.endsWith("or")) {
+                                generatedDefinition = word.slice(0, -2) + "者，人";
+                            } else if (word.endsWith("ing")) {
+                                generatedDefinition = word.slice(0, -3) + "（动名词）";
+                            } else {
+                                generatedDefinition = word + "（名词/动词）";
+                            }
+                            
+                            resolve(generatedDefinition);
+                        }
+                        
+                        // 调用进度回调
+                        if (progressCallback) {
+                            progressCallback();
+                        }
+                    }, 300);
+                });
+            },
+            
+            // 批量获取单词释义，带进度反馈
+            async getDefinitions(words) {
+                const results = [];
+                const total = words.length;
+                let completed = 0;
+                
+                for (const word of words) {
+                    const definition = await this.getDefinition(word, () => {
+                        // 更新进度
+                        completed++;
+                        const progress = Math.round((completed / total) * 100);
+                        this.updateProgress(progress, completed, total);
+                    });
+                    results.push({
+                        english: word,
+                        chinese: definition
+                    });
+                }
+                
+                return results;
+            },
+            
+            // 更新进度显示
+            updateProgress(percentage, completed, total) {
+                const progressBar = document.getElementById('progress-bar');
+                const progressText = document.getElementById('progress-text');
+                
+                if (progressBar && progressText) {
+                    progressBar.style.width = `${percentage}%`;
+                    progressText.textContent = `Fetching definitions: ${completed}/${total} words`;
+                }
+            }
+        };
+
+        // Excel处理服务
+        const ExcelService = {
+            // 解析Excel文件并提取单词
+            async parseExcelFile(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        try {
+                            const data = new Uint8Array(e.target.result);
+                            const workbook = XLSX.read(data, { type: 'array' });
+                            
+                            // 获取第一个工作表
+                            const firstSheetName = workbook.SheetNames[0];
+                            const worksheet = workbook.Sheets[firstSheetName];
+                            
+                            // 转换为JSON
+                            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                            
+                            if (jsonData.length <= 1) {
+                                resolve([]);
+                                return;
+                            }
+                            
+                            // 解析单词（跳过表头行）
+                            const words = [];
+                            for (let i = 1; i < jsonData.length; i++) {
+                                const row = jsonData[i];
+                                if (!row || !row[0]) continue; // 跳过空行或没有英文单词的行
+                                
+                                words.push({
+                                    english: row[0].toString().trim(),
+                                    chinese: row[1] ? row[1].toString().trim() : ''
+                                });
+                            }
+                            
+                            resolve(words);
+                        } catch (error) {
+                            reject(new Error('Failed to parse Excel file: ' + error.message));
+                        }
+                    };
+                    
+                    reader.onerror = function() {
+                        reject(new Error('Error reading file'));
+                    };
+                    
+                    reader.readAsArrayBuffer(file);
+                });
+            }
+        };
+
+        // 应用控制器
+        const AppController = {
+            currentSection: 'import',
+            testState: null,
+            selectedOption: null,
+            
+            init() {
+                this.setupEventListeners();
+                this.renderAllSections();
+                
+                // 监听数据更新
+                VocabData.onUpdate(() => this.renderAllSections());
+                TestResults.onUpdate(() => this.renderResultsSection());
+            },
+            
+            setupEventListeners() {
+                // 导航按钮事件
+                document.querySelectorAll('.nav-btn, .mobile-nav-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const section = e.currentTarget.id.split('-')[1];
+                        this.navigateTo(section);
+                    });
+                });
+                
+                // 移动端菜单切换
+                document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+                    const mobileMenu = document.getElementById('mobile-menu');
+                    mobileMenu.classList.toggle('hidden');
+                });
+                
+                // 导入单词按钮
+                document.getElementById('import-btn').addEventListener('click', () => this.importWords());
+                
+                // 清空输入按钮
+                document.getElementById('clear-input-btn').addEventListener('click', () => {
+                    document.getElementById('word-input').value = '';
+                });
+                
+                // 文件上传
+                document.getElementById('file-upload').addEventListener('change', (e) => this.handleFileUpload(e));
+                
+                // 管理页面 - 搜索单词
+                document.getElementById('search-words').addEventListener('input', (e) => {
+                    this.renderManageSection(e.target.value);
+                });
+                
+                // 管理页面 - 全选单词
+                document.getElementById('select-all-words').addEventListener('change', (e) => {
+                    this.toggleSelectAllWords(e.target.checked);
+                });
+                
+                // 管理页面 - 删除选中单词
+                document.getElementById('delete-selected-btn').addEventListener('click', () => {
+                    this.deleteSelectedWords();
+                });
+                
+                // 管理页面 - 删除所有单词
+                document.getElementById('delete-all-btn').addEventListener('click', () => {
+                    this.showConfirmDialog(
+                        'Delete All Words',
+                        'Are you sure you want to delete all vocabulary words? This action cannot be undone.',
+                        () => VocabData.clearAllWords()
+                    );
+                });
+                
+                // 管理页面 - 导出单词
+                document.getElementById('export-words-btn').addEventListener('click', () => {
+                    this.exportWords();
+                });
+                
+                // 管理页面 - 前往导入页面
+                document.getElementById('go-to-import-btn').addEventListener('click', () => {
+                    this.navigateTo('import');
+                });
+                
+                // 测试页面 - 开始测试
+                document.getElementById('start-test-btn').addEventListener('click', () => {
+                    this.startTest();
+                });
+                
+                // 测试页面 - 提交答案
+                document.getElementById('submit-answer-btn').addEventListener('click', () => {
+                    this.submitAnswer();
+                });
+                
+                // 测试页面 - 跳过问题
+                document.getElementById('skip-question-btn').addEventListener('click', () => {
+                    this.skipQuestion();
+                });
+                
+                // 测试页面 - 下一个问题
+                document.getElementById('next-question-btn').addEventListener('click', () => {
+                    this.nextQuestion();
+                });
+                
+                // 测试页面 - 重新测试
+                document.getElementById('restart-test-btn').addEventListener('click', () => {
+                    this.resetTest();
+                });
+                
+                // 测试页面 - 保存结果
+                document.getElementById('save-results-btn').addEventListener('click', () => {
+                    this.saveTestResults();
+                });
+                
+                // 结果页面 - 前往测试页面
+                document.getElementById('go-to-test-btn').addEventListener('click', () => {
+                    this.navigateTo('test');
+                });
+                
+                // 结果页面 - 清除历史记录
+                document.getElementById('clear-history-btn').addEventListener('click', () => {
+                    this.showConfirmDialog(
+                        'Clear Test History',
+                        'Are you sure you want to delete all test results? This action cannot be undone.',
+                        () => TestResults.clearAllResults()
+                    );
+                });
+                
+                // 确认对话框事件
+                document.getElementById('confirm-ok').addEventListener('click', () => {
+                    if (this.confirmCallback) {
+                        this.confirmCallback();
+                    }
+                    document.getElementById('confirm-dialog').classList.add('hidden');
+                });
+                
+                document.getElementById('confirm-cancel').addEventListener('click', () => {
+                    document.getElementById('confirm-dialog').classList.add('hidden');
+                });
+                
+                // 答案输入框回车键提交
+                document.getElementById('test-answer').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.submitAnswer();
+                    }
+                });
+            },
+            
+            // 导航到指定 section
+            navigateTo(section) {
+                // 更新当前 section
+                this.currentSection = section;
+                
+                // 隐藏所有 section
+                document.querySelectorAll('.section').forEach(el => {
+                    el.classList.add('hidden');
+                    el.classList.remove('active');
+                });
+                
+                // 显示选中的 section
+                document.getElementById(`${section}-section`).classList.remove('hidden');
+                document.getElementById(`${section}-section`).classList.add('active');
+                
+                // 更新导航按钮状态
+                document.querySelectorAll('.nav-btn, .mobile-nav-btn').forEach(btn => {
+                    btn.classList.remove('active', 'text-primary', 'border-b-2', 'border-primary');
+                    btn.classList.add('text-gray-600');
+                });
+                
+                document.getElementById(`nav-${section}`)?.classList.add('active', 'text-primary', 'border-b-2', 'border-primary');
+                document.getElementById(`mobile-${section}`)?.classList.add('active', 'text-primary');
+                
+                // 关闭移动菜单
+                document.getElementById('mobile-menu').classList.add('hidden');
+            },
+            
+            // 渲染所有 section
+            renderAllSections() {
+                this.renderImportSection();
+                this.renderManageSection();
+                this.renderTestSection();
+                this.renderResultsSection();
+            },
+            
+            // 渲染导入 section
+            renderImportSection() {
+                // 重置导入结果
+                document.getElementById('import-status').classList.add('hidden');
+                document.getElementById('import-results').classList.add('hidden');
+            },
+            
+            // 渲染管理 section
+            renderManageSection(searchQuery = '') {
+                const words = VocabData.searchWords(searchQuery);
+                const wordsList = document.getElementById('words-list');
+                const noWordsMessage = document.getElementById('no-words-message');
+                const wordsCount = document.getElementById('words-count');
+                const exportBtn = document.getElementById('export-words-btn');
+                
+                // 更新单词计数
+                wordsCount.textContent = VocabData.getWords().length;
+                
+                // 启用/禁用导出按钮
+                exportBtn.disabled = words.length === 0;
+                
+                // 显示/隐藏无单词消息
+                if (words.length === 0) {
+                    noWordsMessage.classList.remove('hidden');
+                    document.getElementById('words-container').classList.add('hidden');
+                    return;
+                }
+                
+                noWordsMessage.classList.add('hidden');
+                document.getElementById('words-container').classList.remove('hidden');
+                
+                // 清空列表
+                wordsList.innerHTML = '';
+                
+                // 添加单词到列表
+                words.forEach(word => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50 transition-custom';
+                    row.innerHTML = `
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <input type="checkbox" class="word-checkbox rounded border-gray-300 text-primary focus:ring-primary" data-id="${word.id}">
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap font-medium text-gray-900">${word.english}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-gray-600">${word.chinese}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${word.addedDate}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                            <button class="text-danger hover:text-danger/80 delete-word-btn" data-id="${word.id}">
+                                <i class="fa fa-trash"></i> Delete
+                            </button>
+                        </td>
+                    `;
+                    wordsList.appendChild(row);
+                });
+                
+                // 添加删除按钮事件
+                document.querySelectorAll('.delete-word-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = parseInt(e.currentTarget.dataset.id);
+                        this.showConfirmDialog(
+                            'Delete Word',
+                            'Are you sure you want to delete this word?',
+                            () => VocabData.deleteWord(id)
+                        );
+                    });
+                });
+                
+                // 添加复选框事件
+                document.querySelectorAll('.word-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('change', () => {
+                        this.updateDeleteSelectedButton();
+                    });
+                });
+                
+                // 重置全选复选框
+                document.getElementById('select-all-words').checked = false;
+                this.updateDeleteSelectedButton();
+            },
+            
+            // 渲染测试 section
+            renderTestSection() {
+                const words = VocabData.getWords();
+                const startTestBtn = document.getElementById('start-test-btn');
+                const maxWordsText = document.getElementById('max-words-text');
+                const testCountInput = document.getElementById('test-count');
+                
+                // 更新最大单词数
+                maxWordsText.textContent = `max: ${words.length}`;
+                
+                // 设置测试数量输入的最大限制
+                testCountInput.max = words.length;
+                
+                // 如果当前测试数量大于可用单词数，调整它
+                if (parseInt(testCountInput.value) > words.length && words.length > 0) {
+                    testCountInput.value = words.length;
+                }
+                
+                // 启用/禁用开始测试按钮
+                startTestBtn.disabled = words.length === 0;
+                
+                // 如果没有测试进行中，显示设置界面
+                if (!this.testState) {
+                    document.getElementById('test-settings').classList.remove('hidden');
+                    document.getElementById('test-in-progress').classList.add('hidden');
+                    document.getElementById('test-results').classList.add('hidden');
+                }
+            },
+            
+            // 渲染结果 section
+            renderResultsSection() {
+                const results = TestResults.getResults();
+                const resultsContainer = document.getElementById('results-container');
+                const noResultsMessage = document.getElementById('no-results-message');
+                const clearHistoryBtn = document.getElementById('clear-history-btn');
+                
+                // 启用/禁用清除历史按钮
+                clearHistoryBtn.disabled = results.length === 0;
+                
+                // 显示/隐藏无结果消息
+                if (results.length === 0) {
+                    noResultsMessage.classList.remove('hidden');
+                    resultsContainer.classList.add('hidden');
+                    return;
+                }
+                
+                noResultsMessage.classList.add('hidden');
+                resultsContainer.classList.remove('hidden');
+                
+                // 清空结果容器
+                resultsContainer.innerHTML = '';
+                
+                // 按日期排序（最新的在前）
+                results.sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                // 添加结果卡片
+                results.forEach(result => {
+                    const date = new Date(result.date);
+                    const formattedDate = date.toLocaleString();
+                    const percentage = Math.round((result.correct / result.total) * 100);
+                    
+                    // 测试类型显示文本
+                    let testTypeText = '';
+                    switch(result.testType) {
+                        case 'english-to-chinese':
+                            testTypeText = 'English → Chinese (Type)';
+                            break;
+                        case 'chinese-to-english':
+                            testTypeText = 'Chinese → English (Type)';
+                            break;
+                        case 'english-to-chinese-multiple':
+                            testTypeText = 'English → Chinese (Multiple Choice)';
+                            break;
+                        case 'sentence-completion':
+                            testTypeText = 'Sentence Completion';
+                            break;
+                        default:
+                            testTypeText = 'Vocabulary Test';
+                    }
+                    
+                    const card = document.createElement('div');
+                    card.className = 'border border-gray-200 rounded-lg p-4 hover:shadow-md transition-custom';
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h3 class="font-bold text-gray-800">Test on ${formattedDate}</h3>
+                                <p class="text-sm text-gray-600">${testTypeText}</p>
+                            </div>
+                            <span class="bg-${percentage >= 70 ? 'secondary' : percentage >= 40 ? 'yellow-500' : 'danger'}/10 text-${percentage >= 70 ? 'secondary' : percentage >= 40 ? 'yellow-500' : 'danger'} font-bold px-3 py-1 rounded-full text-sm">
+                                ${percentage}%
+                            </span>
+                        </div>
+                        <div class="flex justify-between text-sm mb-3">
+                            <div>Total: ${result.total} words</div>
+                            <div>Correct: ${result.correct}</div>
+                            <div>Incorrect: ${result.incorrect}</div>
+                        </div>
+                        <div class="flex justify-end">
+                            <button class="text-danger hover:text-danger/80 delete-result-btn text-sm" data-id="${result.id}">
+                                <i class="fa fa-trash mr-1"></i> Delete
+                            </button>
+                        </div>
+                    `;
+                    resultsContainer.appendChild(card);
+                });
+                
+                // 添加删除结果按钮事件
+                document.querySelectorAll('.delete-result-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = parseInt(e.currentTarget.dataset.id);
+                        this.showConfirmDialog(
+                            'Delete Test Result',
+                            'Are you sure you want to delete this test result?',
+                            () => TestResults.deleteResult(id)
+                        );
+                    });
+                });
+            },
+            
+            // 导入单词
+            async importWords() {
+                const input = document.getElementById('word-input').value.trim();
+                if (!input) {
+                    this.showImportStatus('Please enter some words to import.', 'error');
+                    return;
+                }
+                
+                // 解析输入的单词
+                const lines = input.split('\n');
+                const wordsToImport = [];
+                const linesWithOnlyEnglish = [];
+                
+                lines.forEach(line => {
+                    const trimmedLine = line.trim();
+                    if (!trimmedLine) return;
+                    
+                    const parts = trimmedLine.split(',');
+                    if (parts.length >= 2 && parts[1].trim()) {
+                        // 同时有英文和中文
+                        wordsToImport.push({
+                            english: parts[0].trim(),
+                            chinese: parts.slice(1).join(',').trim()
+                        });
+                    } else {
+                        // 只有英文，需要查询中文释义
+                        linesWithOnlyEnglish.push(parts[0].trim());
+                    }
+                });
+                
+                // 显示加载状态
+                this.showImportStatus('Importing words... Please wait.', 'info', true);
+                
+                // 如果有需要查询释义的单词，进行查询
+                if (linesWithOnlyEnglish.length > 0) {
+                    try {
+                        const definedWords = await DictionaryService.getDefinitions(linesWithOnlyEnglish);
+                        wordsToImport.push(...definedWords);
+                    } catch (error) {
+                        this.showImportStatus('Failed to fetch definitions for some words.', 'error');
+                        console.error('Error fetching definitions:', error);
+                    }
+                }
+                
+                // 导入单词
+                if (wordsToImport.length > 0) {
+                    const results = VocabData.addWords(wordsToImport);
+                    this.showImportResults(results);
+                    this.showImportStatus(`Successfully imported ${results.filter(r => r.status === 'success').length} words.`, 'success');
+                    
+                    // 清空输入
+                    document.getElementById('word-input').value = '';
+                } else {
+                    this.showImportStatus('No valid words to import.', 'error');
+                }
+            },
+            
+            // 处理文件上传
+            async handleFileUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                // 检查文件类型
+                const fileName = file.name.toLowerCase();
+                const isTxtFile = fileName.endsWith('.txt');
+                const isExcelFile = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+                
+                if (!isTxtFile && !isExcelFile) {
+                    this.showImportStatus('Please upload a TXT, XLSX, or XLS file.', 'error');
+                    return;
+                }
+                
+                try {
+                    this.showImportStatus('Processing file... Please wait.', 'info', true);
+                    
+                    let wordsToImport = [];
+                    
+                    if (isTxtFile) {
+                        // 处理TXT文件
+                        const reader = new FileReader();
+                        await new Promise((resolve) => {
+                            reader.onload = (e) => {
+                                document.getElementById('word-input').value = e.target.result;
+                                resolve();
+                            };
+                            reader.readAsText(file);
+                        });
+                        
+                        // 自动导入TXT内容
+                        await this.importWords();
+                    } else {
+                        // 处理Excel文件
+                        wordsToImport = await ExcelService.parseExcelFile(file);
+                        
+                        if (wordsToImport.length === 0) {
+                            this.showImportStatus('No valid words found in the Excel file.', 'error');
+                            event.target.value = '';
+                            return;
+                        }
+                        
+                        // 分离需要查询释义的单词
+                        const linesWithOnlyEnglish = [];
+                        const wordsWithDefinitions = [];
+                        
+                        wordsToImport.forEach(word => {
+                            if (word.english && !word.chinese) {
+                                linesWithOnlyEnglish.push(word.english);
+                            } else {
+                                wordsWithDefinitions.push(word);
+                            }
+                        });
+                        
+                        // 查询缺失的释义
+                        if (linesWithOnlyEnglish.length > 0) {
+                            const definedWords = await DictionaryService.getDefinitions(linesWithOnlyEnglish);
+                            wordsWithDefinitions.push(...definedWords);
+                        }
+                        
+                        // 导入单词
+                        const results = VocabData.addWords(wordsWithDefinitions);
+                        this.showImportResults(results);
+                        this.showImportStatus(`Successfully imported ${results.filter(r => r.status === 'success').length} words from Excel.`, 'success');
+                    }
+                } catch (error) {
+                    this.showImportStatus('Error processing file: ' + error.message, 'error');
+                    console.error('File processing error:', error);
+                } finally {
+                    // 重置文件输入，以便可以重新上传同一个文件
+                    event.target.value = '';
+                }
+            },
+            
+            // 显示导入状态
+            showImportStatus(message, type, showProgress = false) {
+                const statusEl = document.getElementById('import-status');
+                const statusIcon = document.getElementById('status-icon');
+                const statusMessage = document.getElementById('status-message');
+                const progressContainer = document.getElementById('progress-container');
+                
+                statusMessage.textContent = message;
+                statusEl.classList.remove('hidden', 'bg-secondary/10', 'text-secondary', 'border', 'border-secondary/30',
+                                          'bg-danger/10', 'text-danger', 'border', 'border-danger/30',
+                                          'bg-primary/10', 'text-primary', 'border', 'border-primary/30');
+                
+                if (type === 'success') {
+                    statusIcon.className = 'fa fa-check-circle text-secondary mr-2';
+                    statusEl.classList.add('bg-secondary/10', 'text-secondary', 'border', 'border-secondary/30');
+                } else if (type === 'error') {
+                    statusIcon.className = 'fa fa-times-circle text-danger mr-2';
+                    statusEl.classList.add('bg-danger/10', 'text-danger', 'border', 'border-danger/30');
+                } else {
+                    statusIcon.className = 'fa fa-spinner fa-spin text-primary mr-2';
+                    statusEl.classList.add('bg-primary/10', 'text-primary', 'border', 'border-primary/30');
+                }
+                
+                // 显示/隐藏进度条
+                if (showProgress) {
+                    progressContainer.classList.remove('hidden');
+                    document.getElementById('progress-bar').style.width = '0%';
+                    document.getElementById('progress-text').textContent = 'Preparing...';
+                } else {
+                    progressContainer.classList.add('hidden');
+                }
+            },
+            
+            // 显示导入结果
+            showImportResults(results) {
+                const resultsBody = document.getElementById('import-results-body');
+                resultsBody.innerHTML = '';
+                
+                results.forEach(result => {
+                    const row = document.createElement('tr');
+                    row.className = result.status === 'success' ? 'bg-secondary/5' : 'bg-danger/5';
+                    
+                    row.innerHTML = `
+                        <td class="px-4 py-2 whitespace-nowrap">${result.english}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${result.chinese || '-'}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">
+                            <span class="px-2 py-1 rounded-full text-xs font-medium ${
+                                result.status === 'success' 
+                                    ? 'bg-secondary/10 text-secondary' 
+                                    : 'bg-danger/10 text-danger'
+                            }">
+                                ${result.status === 'success' ? 'Imported' : 'Error'}
+                            </span>
+                        </td>
+                    `;
+                    
+                    resultsBody.appendChild(row);
+                });
+                
+                document.getElementById('import-results').classList.remove('hidden');
+            },
+            
+            // 全选/取消全选单词
+            toggleSelectAllWords(checked) {
+                document.querySelectorAll('.word-checkbox').forEach(checkbox => {
+                    checkbox.checked = checked;
+                });
+                this.updateDeleteSelectedButton();
+            },
+            
+            // 更新删除选中按钮状态
+            updateDeleteSelectedButton() {
+                const checkedCount = document.querySelectorAll('.word-checkbox:checked').length;
+                const deleteBtn = document.getElementById('delete-selected-btn');
+                deleteBtn.disabled = checkedCount === 0;
+            },
+            
+            // 删除选中的单词
+            deleteSelectedWords() {
+                const checkedIds = Array.from(document.querySelectorAll('.word-checkbox:checked'))
+                    .map(checkbox => parseInt(checkbox.dataset.id));
+                
+                if (checkedIds.length === 0) return;
+                
+                this.showConfirmDialog(
+                    'Delete Selected Words',
+                    `Are you sure you want to delete ${checkedIds.length} selected words?`,
+                    () => VocabData.deleteWords(checkedIds)
+                );
+            },
+            
+            // 导出单词
+            exportWords() {
+                const words = VocabData.getWords();
+                if (words.length === 0) return;
+                
+                // 构建CSV内容
+                let csvContent = "english,chinese,addedDate\n";
+                words.forEach(word => {
+                    csvContent += `"${word.english}","${word.chinese}","${word.addedDate}"\n`;
+                });
+                
+                // 创建并下载文件
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', `vocab-words-${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            },
+            
+            // 开始测试
+            startTest() {
+                const words = VocabData.getWords();
+                const testCount = parseInt(document.getElementById('test-count').value);
+                const testType = document.querySelector('input[name="test-type"]:checked').value;
+                const testOrder = document.querySelector('input[name="test-order"]:checked').value;
+                
+                // 复制并处理单词列表
+                let testWords = [...words];
+                
+                // 对于句子填空测试，筛选出有对应句子的单词
+                if (testType === 'sentence-completion') {
+                    testWords = testWords.filter(word => 
+                        SentenceBank.getSentenceForWord(word.english) !== undefined
+                    );
+                    
+                    // 如果符合条件的单词太少，提示用户
+                    if (testWords.length < Math.min(testCount, 5)) {
+                        alert('Not enough words available for sentence completion test. Please import more common words.');
+                        return;
+                    }
+                }
+                
+                // 如果需要随机排序
+                if (testOrder === 'random') {
+                    testWords.sort(() => Math.random() - 0.5);
+                }
+                
+                // 限制测试数量
+                testWords = testWords.slice(0, testCount);
+                
+                // 为不同测试类型准备额外数据
+                let testData = [];
+                
+                if (testType === 'english-to-chinese-multiple') {
+                    // 为英译汉选择题准备选项
+                    testData = testWords.map(word => {
+                        const options = VocabData.getRandomChineseOptions(word.chinese);
+                        return {
+                            ...word,
+                            options
+                        };
+                    });
+                } else if (testType === 'sentence-completion') {
+                    // 为句子填空测试准备句子和选项
+                    testData = testWords.map(word => {
+                        const sentenceObj = SentenceBank.getSentenceForWord(word.english);
+                        const options = SentenceBank.createOptions(word.english, words);
+                        
+                        return {
+                            ...word,
+                            sentence: sentenceObj.sentence,
+                            options
+                        };
+                    });
+                } else {
+                    // 传统测试类型
+                    testData = testWords;
+                }
+                
+                // 初始化测试状态
+                this.testState = {
+                    testType,
+                    testOrder,
+                    total: testData.length,
+                    current: 0,
+                    words: testData,
+                    answers: []
+                };
+                
+                // 显示测试界面
+                document.getElementById('test-settings').classList.add('hidden');
+                document.getElementById('test-in-progress').classList.remove('hidden');
+                document.getElementById('test-results').classList.add('hidden');
+                
+                // 显示第一个问题
+                this.displayCurrentQuestion();
+            },
+            
+            // 显示当前问题
+            displayCurrentQuestion() {
+                if (!this.testState || this.testState.current >= this.testState.total) {
+                    this.finishTest();
+                    return;
+                }
+                
+                const currentWord = this.testState.words[this.testState.current];
+                this.selectedOption = null;
+                
+                // 重置UI
+                document.getElementById('answer-feedback').classList.add('hidden');
+                
+                // 更新进度
+                document.getElementById('current-question').textContent = this.testState.current + 1;
+                document.getElementById('total-questions').textContent = this.testState.total;
+                
+                // 根据测试类型显示不同的界面
+                switch (this.testState.testType) {
+                    case 'english-to-chinese':
+                    case 'chinese-to-english':
+                        this.showInputTest(currentWord);
+                        break;
+                    case 'english-to-chinese-multiple':
+                        this.showMultipleChoiceTest(currentWord);
+                        break;
+                    case 'sentence-completion':
+                        this.showSentenceCompletionTest(currentWord);
+                        break;
+                }
+            },
+            
+            // 显示输入式测试
+            showInputTest(word) {
+                // 隐藏其他测试类型容器
+                document.getElementById('input-test-container').classList.remove('hidden');
+                document.getElementById('multiple-choice-container').classList.add('hidden');
+                document.getElementById('sentence-test-container').classList.add('hidden');
+                
+                const questionEl = document.getElementById('test-question');
+                const answerEl = document.getElementById('test-answer');
+                
+                // 重置输入框
+                answerEl.value = '';
+                
+                // 设置问题
+                if (this.testState.testType === 'english-to-chinese') {
+                    questionEl.textContent = word.english;
+                    answerEl.placeholder = 'Enter the Chinese meaning...';
+                } else {
+                    questionEl.textContent = word.chinese;
+                    answerEl.placeholder = 'Enter the English word...';
+                }
+                
+                // 自动聚焦到答案输入框
+                answerEl.focus();
+            },
+            
+            // 显示选择题测试
+            showMultipleChoiceTest(word) {
+                // 隐藏其他测试类型容器
+                document.getElementById('input-test-container').classList.add('hidden');
+                document.getElementById('multiple-choice-container').classList.remove('hidden');
+                document.getElementById('sentence-test-container').classList.add('hidden');
+                
+                const questionEl = document.getElementById('mc-question');
+                const optionsContainer = document.getElementById('options-container');
+                
+                // 设置问题
+                questionEl.textContent = word.english;
+                
+                // 清空并添加选项
+                optionsContainer.innerHTML = '';
+                word.options.forEach((option, index) => {
+                    const optionEl = document.createElement('div');
+                    optionEl.className = 'border border-gray-200 rounded-lg p-3 option-hover';
+                    optionEl.dataset.option = option;
+                    optionEl.innerHTML = `
+                        <div class="flex items-center">
+                            <div class="w-5 h-5 rounded-full border border-gray-300 flex-shrink-0 mr-3 option-indicator"></div>
+                            <span>${option}</span>
+                        </div>
+                    `;
+                    
+                    // 添加点击事件
+                    optionEl.addEventListener('click', () => {
+                        // 移除其他选项的选中状态
+                        document.querySelectorAll('#options-container > div').forEach(el => {
+                            el.classList.remove('border-primary', 'bg-primary/5');
+                            el.querySelector('.option-indicator').classList.remove('bg-primary', 'border-primary');
+                            el.querySelector('.option-indicator').classList.add('border-gray-300');
+                        });
+                        
+                        // 设置当前选项为选中状态
+                        optionEl.classList.add('border-primary', 'bg-primary/5');
+                        optionEl.querySelector('.option-indicator').classList.remove('border-gray-300');
+                        optionEl.querySelector('.option-indicator').classList.add('bg-primary', 'border-primary');
+                        
+                        // 记录选中的选项
+                        this.selectedOption = option;
+                    });
+                    
+                    optionsContainer.appendChild(optionEl);
+                });
+            },
+            
+            // 显示句子填空测试
+            showSentenceCompletionTest(word) {
+                // 隐藏其他测试类型容器
+                document.getElementById('input-test-container').classList.add('hidden');
+                document.getElementById('multiple-choice-container').classList.add('hidden');
+                document.getElementById('sentence-test-container').classList.remove('hidden');
+                
+                const questionEl = document.getElementById('sentence-question');
+                const optionsContainer = document.getElementById('sentence-options-container');
+                
+                // 设置问题（句子）
+                questionEl.innerHTML = word.sentence.replace('[______]', '<span class="bg-primary/10 px-2 py-1 rounded">______</span>');
+                
+                // 清空并添加选项
+                optionsContainer.innerHTML = '';
+                word.options.forEach(option => {
+                    const optionEl = document.createElement('div');
+                    optionEl.className = 'border border-gray-200 rounded-lg p-3 option-hover';
+                    optionEl.dataset.option = option;
+                    optionEl.innerHTML = `
+                        <div class="flex items-center">
+                            <div class="w-5 h-5 rounded-full border border-gray-300 flex-shrink-0 mr-3 option-indicator"></div>
+                            <span>${option}</span>
+                        </div>
+                    `;
+                    
+                    // 添加点击事件
+                    optionEl.addEventListener('click', () => {
+                        // 移除其他选项的选中状态
+                        document.querySelectorAll('#sentence-options-container > div').forEach(el => {
+                            el.classList.remove('border-primary', 'bg-primary/5');
+                            el.querySelector('.option-indicator').classList.remove('bg-primary', 'border-primary');
+                            el.querySelector('.option-indicator').classList.add('border-gray-300');
+                        });
+                        
+                        // 设置当前选项为选中状态
+                        optionEl.classList.add('border-primary', 'bg-primary/5');
+                        optionEl.querySelector('.option-indicator').classList.remove('border-gray-300');
+                        optionEl.querySelector('.option-indicator').classList.add('bg-primary', 'border-primary');
+                        
+                        // 记录选中的选项
+                        this.selectedOption = option;
+                    });
+                    
+                    optionsContainer.appendChild(optionEl);
+                });
+            },
+            
+            // 提交答案
+            submitAnswer() {
+                const currentWord = this.testState.words[this.testState.current];
+                let userAnswer, correctAnswer, isCorrect = false;
+                
+                // 根据测试类型处理答案
+                switch (this.testState.testType) {
+                    case 'english-to-chinese':
+                        userAnswer = document.getElementById('test-answer').value.trim();
+                        correctAnswer = currentWord.chinese;
+                        // 中文答案检查（简单匹配）
+                        isCorrect = correctAnswer.toLowerCase().includes(userAnswer.toLowerCase()) ||
+                                   userAnswer.toLowerCase().includes(correctAnswer.toLowerCase());
+                        break;
+                        
+                    case 'chinese-to-english':
+                        userAnswer = document.getElementById('test-answer').value.trim();
+                        correctAnswer = currentWord.english;
+                        // 英文答案检查（忽略大小写）
+                        isCorrect = correctAnswer.toLowerCase() === userAnswer.toLowerCase();
+                        break;
+                        
+                    case 'english-to-chinese-multiple':
+                        if (this.selectedOption === null) {
+                            // 未选择选项
+                            alert('Please select an option.');
+                            return;
+                        }
+                        userAnswer = this.selectedOption;
+                        correctAnswer = currentWord.chinese;
+                        isCorrect = userAnswer === correctAnswer;
+                        break;
+                        
+                    case 'sentence-completion':
+                        if (this.selectedOption === null) {
+                            // 未选择选项
+                            alert('Please select an option.');
+                            return;
+                        }
+                        userAnswer = this.selectedOption;
+                        correctAnswer = currentWord.english;
+                        isCorrect = userAnswer.toLowerCase() === correctAnswer.toLowerCase();
+                        break;
+                }
+                
+                // 记录答案
+                this.testState.answers.push({
+                    question: this.getQuestionText(currentWord),
+                    userAnswer,
+                    correctAnswer,
+                    isCorrect
+                });
+                
+                // 显示反馈
+                const feedbackEl = document.getElementById('answer-feedback');
+                const feedbackIcon = document.getElementById('feedback-icon');
+                const feedbackTitle = document.getElementById('feedback-title');
+                const feedbackMessage = document.getElementById('feedback-message');
+                
+                if (isCorrect) {
+                    feedbackEl.className = 'mt-6 p-4 rounded-lg bg-secondary/10 border border-secondary/30';
+                    feedbackIcon.className = 'fa fa-check-circle text-secondary text-xl mt-0.5 mr-3';
+                    feedbackTitle.className = 'font-medium text-secondary';
+                    feedbackTitle.textContent = 'Correct!';
+                    feedbackMessage.textContent = `Your answer "${userAnswer}" is correct.`;
+                } else {
+                    feedbackEl.className = 'mt-6 p-4 rounded-lg bg-danger/10 border border-danger/30';
+                    feedbackIcon.className = 'fa fa-times-circle text-danger text-xl mt-0.5 mr-3';
+                    feedbackTitle.className = 'font-medium text-danger';
+                    feedbackTitle.textContent = 'Incorrect';
+                    feedbackMessage.textContent = `The correct answer is "${correctAnswer}".`;
+                }
+                
+                feedbackEl.classList.remove('hidden');
+            },
+            
+            // 获取问题文本（用于结果展示）
+            getQuestionText(word) {
+                switch (this.testState.testType) {
+                    case 'english-to-chinese':
+                    case 'english-to-chinese-multiple':
+                        return word.english;
+                    case 'chinese-to-english':
+                        return word.chinese;
+                    case 'sentence-completion':
+                        return word.sentence.replace('[______]', '______');
+                    default:
+                        return '';
+                }
+            },
+            
+            // 跳过问题
+            skipQuestion() {
+                const currentWord = this.testState.words[this.testState.current];
+                let correctAnswer, questionText;
+                
+                // 确定正确答案和问题文本
+                switch (this.testState.testType) {
+                    case 'english-to-chinese':
+                    case 'english-to-chinese-multiple':
+                        correctAnswer = currentWord.chinese;
+                        questionText = currentWord.english;
+                        break;
+                    case 'chinese-to-english':
+                        correctAnswer = currentWord.english;
+                        questionText = currentWord.chinese;
+                        break;
+                    case 'sentence-completion':
+                        correctAnswer = currentWord.english;
+                        questionText = currentWord.sentence.replace('[______]', '______');
+                        break;
+                }
+                
+                // 记录为未答
+                this.testState.answers.push({
+                    question: questionText,
+                    userAnswer: 'Skipped',
+                    correctAnswer,
+                    isCorrect: false
+                });
+                
+                this.nextQuestion();
+            },
+            
+            // 下一个问题
+            nextQuestion() {
+                this.testState.current++;
+                this.displayCurrentQuestion();
+            },
+            
+            // 完成测试
+            finishTest() {
+                // 计算结果
+                const correctCount = this.testState.answers.filter(a => a.isCorrect).length;
+                const incorrectCount = this.testState.answers.length - correctCount;
+                const score = Math.round((correctCount / this.testState.answers.length) * 100);
+                
+                // 更新结果UI
+                document.getElementById('test-score').textContent = `${score}%`;
+                document.getElementById('correct-answers').textContent = correctCount;
+                document.getElementById('incorrect-answers').textContent = incorrectCount;
+                
+                // 填充答案回顾
+                const reviewContainer = document.getElementById('review-answers');
+                reviewContainer.innerHTML = '';
+                
+                this.testState.answers.forEach(answer => {
+                    const row = document.createElement('tr');
+                    row.className = answer.isCorrect ? 'bg-secondary/5' : 'bg-danger/5';
+                    
+                    row.innerHTML = `
+                        <td class="px-4 py-2 whitespace-nowrap">${answer.question}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${answer.userAnswer}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${answer.correctAnswer}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">
+                            <span class="px-2 py-1 rounded-full text-xs font-medium ${
+                                answer.isCorrect 
+                                    ? 'bg-secondary/10 text-secondary' 
+                                    : 'bg-danger/10 text-danger'
+                            }">
+                                ${answer.isCorrect ? 'Correct' : 'Incorrect'}
+                            </span>
+                        </td>
+                    `;
+                    
+                    reviewContainer.appendChild(row);
+                });
+                
+                // 显示结果界面
+                document.getElementById('test-in-progress').classList.add('hidden');
+                document.getElementById('test-results').classList.remove('hidden');
+            },
+            
+            // 重置测试
+            resetTest() {
+                this.testState = null;
+                this.selectedOption = null;
+                this.renderTestSection();
+            },
+            
+            // 保存测试结果
+            saveTestResults() {
+                if (!this.testState) return;
+                
+                const correctCount = this.testState.answers.filter(a => a.isCorrect).length;
+                
+                const result = {
+                    testType: this.testState.testType,
+                    total: this.testState.total,
+                    correct: correctCount,
+                    incorrect: this.testState.total - correctCount
+                };
+                
+                TestResults.saveResult(result);
+                
+                // 显示保存成功提示
+                const saveBtn = document.getElementById('save-results-btn');
+                const originalText = saveBtn.innerHTML;
+                saveBtn.innerHTML = '<i class="fa fa-check mr-2"></i> Saved!';
+                saveBtn.classList.remove('bg-gray-200', 'hover:bg-gray-300', 'text-gray-700');
+                saveBtn.classList.add('bg-secondary', 'text-white');
+                saveBtn.disabled = true;
+                
+                setTimeout(() => {
+                    this.resetTest();
+                    this.navigateTo('results');
+                }, 1000);
+            },
+            
+            // 显示确认对话框
+            showConfirmDialog(title, message, callback) {
+                document.getElementById('confirm-title').textContent = title;
+                document.getElementById('confirm-message').textContent = message;
+                this.confirmCallback = callback;
+                document.getElementById('confirm-dialog').classList.remove('hidden');
+            }
+        };
+
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', () => {
+            AppController.init();
+        });
+    </script>
+</body>
+</html>
