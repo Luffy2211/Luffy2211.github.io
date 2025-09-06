@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>习惯打卡 | 养成良好习惯，告别不良嗜好</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  
+  <!-- Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#3B82F6',     // 蓝色 - 正积分
+            secondary: '#EF4444',   // 红色 - 负积分
+            neutral: '#1F2937',     // 深色文本
+            light: '#F3F4F6',       // 浅色背景
+          },
+          fontFamily: {
+            inter: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .card-shadow {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+      .btn-hover {
+        @apply transition-all duration-300 hover:shadow-lg transform hover:-translate-y-0.5;
+      }
+      .habit-item {
+        @apply flex items-center justify-between p-4 rounded-lg mb-3 transition-all duration-300 hover:shadow-md;
+      }
+    }
+  </style>
+</head>
+
+<body class="font-inter bg-gray-50 text-neutral min-h-screen">
+  <!-- 顶部导航栏 -->
+  <header class="bg-white shadow-md fixed w-full top-0 z-50 transition-all duration-300">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <i class="fa fa-check-circle text-primary text-2xl"></i>
+        <h1 class="text-xl md:text-2xl font-bold">习惯打卡</h1>
+      </div>
+      
+      <div class="flex items-center space-x-4">
+        <div class="hidden md:flex items-center space-x-2">
+          <span class="text-primary font-semibold">正积分: <span id="total-positive" class="text-lg">0</span></span>
+          <span class="h-4 w-px bg-gray-300"></span>
+          <span class="text-secondary font-semibold">负积分: <span id="total-negative" class="text-lg">0</span></span>
+        </div>
+        <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 transition-colors">
+          <i class="fa fa-moon-o"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主内容区 -->
+  <main class="container mx-auto px-4 pt-24 pb-16">
+    <!-- 日期显示 -->
+    <div class="mb-8 text-center">
+      <h2 id="current-date" class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-neutral"></h2>
+      <p id="current-weekday" class="text-gray-500 mt-1"></p>
+    </div>
+    
+    <!-- 今日积分卡片 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+      <div class="bg-white rounded-xl p-6 shadow-lg border-l-4 border-primary transform transition-all duration-300 hover:shadow-xl">
+        <div class="flex justify-between items-center">
+          <div>
+            <p class="text-gray-500 font-medium">今日正积分</p>
+            <h3 id="today-positive" class="text-3xl font-bold text-primary mt-1">0</h3>
+          </div>
+          <div class="bg-blue-50 p-4 rounded-full">
+            <i class="fa fa-arrow-up text-primary text-2xl"></i>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-white rounded-xl p-6 shadow-lg border-l-4 border-secondary transform transition-all duration-300 hover:shadow-xl">
+        <div class="flex justify-between items-center">
+          <div>
+            <p class="text-gray-500 font-medium">今日负积分</p>
+            <h3 id="today-negative" class="text-3xl font-bold text-secondary mt-1">0</h3>
+          </div>
+          <div class="bg-red-50 p-4 rounded-full">
+            <i class="fa fa-arrow-down text-secondary text-2xl"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 标签页导航 -->
+    <div class="flex border-b border-gray-200 mb-6">
+      <button class="tab-button active py-3 px-4 font-medium text-primary border-b-2 border-primary" data-tab="打卡">
+        <i class="fa fa-check-square-o mr-2"></i>打卡
+      </button>
+      <button class="tab-button py-3 px-4 font-medium text-gray-500 hover:text-gray-700" data-tab="统计">
+        <i class="fa fa-line-chart mr-2"></i>统计
+      </button>
+      <button class="tab-button py-3 px-4 font-medium text-gray-500 hover:text-gray-700" data-tab="管理">
+        <i class="fa fa-cog mr-2"></i>管理
+      </button>
+    </div>
+    
+    <!-- 打卡标签页 -->
+    <div class="tab-content active" id="打卡">
+      <!-- 好习惯区域 -->
+      <div class="mb-10">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-bold flex items-center">
+            <i class="fa fa-thumbs-up text-primary mr-2"></i>好习惯
+          </h3>
+        </div>
+        
+        <div id="good-habits-container" class="space-y-3">
+          <!-- 好习惯项目将通过JS动态生成 -->
+        </div>
+      </div>
+      
+      <!-- 坏习惯区域 -->
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-bold flex items-center">
+            <i class="fa fa-thumbs-down text-secondary mr-2"></i>坏习惯
+          </h3>
+        </div>
+        
+        <div id="bad-habits-container" class="space-y-3">
+          <!-- 坏习惯项目将通过JS动态生成 -->
+        </div>
+      </div>
+    </div>
+    
+    <!-- 统计标签页 -->
+    <div class="tab-content hidden" id="统计">
+      <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <h3 class="text-xl font-bold mb-6">积分趋势</h3>
+        <div class="h-80">
+          <canvas id="score-chart"></canvas>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-xl shadow-lg p-6">
+          <h3 class="text-xl font-bold mb-4">好习惯完成情况</h3>
+          <div id="good-habits-stats" class="space-y-4">
+            <!-- 好习惯统计将通过JS动态生成 -->
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-lg p-6">
+          <h3 class="text-xl font-bold mb-4">坏习惯记录</h3>
+          <div id="bad-habits-stats" class="space-y-4">
+            <!-- 坏习惯统计将通过JS动态生成 -->
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 管理标签页 -->
+    <div class="tab-content hidden" id="管理">
+      <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <h3 class="text-xl font-bold mb-4">添加新习惯</h3>
+        <form id="add-habit-form" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-gray-700 mb-2 font-medium">习惯名称</label>
+              <input type="text" id="habit-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors" placeholder="例如：阅读30分钟" required>
+            </div>
+            
+            <div>
+              <label class="block text-gray-700 mb-2 font-medium">习惯类型</label>
+              <select id="habit-type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors">
+                <option value="good">好习惯（正积分）</option>
+                <option value="bad">坏习惯（负积分）</option>
+              </select>
+            </div>
+          </div>
+          
+          <div>
+            <label class="block text-gray-700 mb-2 font-medium">积分值</label>
+            <input type="number" id="habit-points" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors" placeholder="例如：1 或 -1" required>
+            <p class="text-gray-500 text-sm mt-1">好习惯请输入正数，坏习惯请输入负数</p>
+          </div>
+          
+          <div class="flex items-center">
+            <input type="checkbox" id="habit-allow-multiple" class="mr-2 h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+            <label for="habit-allow-multiple" class="text-gray-700">允许一天内多次打卡（如抽烟）</label>
+          </div>
+          
+          <button type="submit" class="bg-primary text-white px-6 py-2 rounded-lg font-medium btn-hover">
+            <i class="fa fa-plus mr-2"></i>添加习惯
+          </button>
+        </form>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-xl shadow-lg p-6">
+          <h3 class="text-xl font-bold mb-4">管理好习惯</h3>
+          <div id="manage-good-habits" class="space-y-3">
+            <!-- 好习惯管理项将通过JS动态生成 -->
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-lg p-6">
+          <h3 class="text-xl font-bold mb-4">管理坏习惯</h3>
+          <div id="manage-bad-habits" class="space-y-3">
+            <!-- 坏习惯管理项将通过JS动态生成 -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 底部导航栏（移动端） -->
+  <footer class="md:hidden fixed bottom-0 w-full bg-white shadow-lg border-t border-gray-200 z-40">
+    <div class="flex justify-around">
+      <button class="tab-button-mobile active flex flex-col items-center justify-center py-3 px-4 w-full" data-tab="打卡">
+        <i class="fa fa-check-square-o text-primary"></i>
+        <span class="text-xs mt-1 text-primary">打卡</span>
+      </button>
+      <button class="tab-button-mobile flex flex-col items-center justify-center py-3 px-4 w-full" data-tab="统计">
+        <i class="fa fa-line-chart text-gray-500"></i>
+        <span class="text-xs mt-1 text-gray-500">统计</span>
+      </button>
+      <button class="tab-button-mobile flex flex-col items-center justify-center py-3 px-4 w-full" data-tab="管理">
+        <i class="fa fa-cog text-gray-500"></i>
+        <span class="text-xs mt-1 text-gray-500">管理</span>
+      </button>
+    </div>
+  </footer>
+
+  <!-- 模态框：编辑习惯 -->
+  <div id="edit-habit-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 transform transition-all">
+      <h3 class="text-xl font-bold mb-4">编辑习惯</h3>
+      <form id="edit-habit-form" class="space-y-4">
+        <input type="hidden" id="edit-habit-id">
+        
+        <div>
+          <label class="block text-gray-700 mb-2 font-medium">习惯名称</label>
+          <input type="text" id="edit-habit-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors" required>
+        </div>
+        
+        <div>
+          <label class="block text-gray-700 mb-2 font-medium">积分值</label>
+          <input type="number" id="edit-habit-points" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors" required>
+        </div>
+        
+        <div class="flex items-center">
+          <input type="checkbox" id="edit-habit-allow-multiple" class="mr-2 h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+          <label for="edit-habit-allow-multiple" class="text-gray-700">允许一天内多次打卡</label>
+        </div>
+        
+        <div class="flex space-x-3 mt-6">
+          <button type="button" id="cancel-edit" class="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium btn-hover">取消</button>
+          <button type="submit" class="flex-1 bg-primary text-white px-4 py-2 rounded-lg font-medium btn-hover">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // 数据模型
+    const HabitTracker = {
+      // 初始化默认习惯
+      defaultHabits: {
+        good: [
+          { id: '1', name: '爬楼梯', points: 1, allowMultiple: false },
+          { id: '2', name: '跑步3公里', points: 1, allowMultiple: false },
+          { id: '3', name: '吃药', points: 1, allowMultiple: false },
+          { id: '4', name: '早睡', points: 1, allowMultiple: false }
+        ],
+        bad: [
+          { id: '5', name: '抽烟', points: -1, allowMultiple: true },
+          { id: '6', name: '喝酒', points: -5, allowMultiple: false }
+        ]
+      },
+      
+      // 初始化应用
+      init() {
+        this.loadHabits();
+        this.loadRecords();
+        this.renderDate();
+        this.renderHabits();
+        this.renderStatistics();
+        this.renderManageHabits();
+        this.updateScores();
+        this.setupEventListeners();
+      },
+      
+      // 加载习惯数据
+      loadHabits() {
+        const savedGoodHabits = localStorage.getItem('goodHabits');
+        const savedBadHabits = localStorage.getItem('badHabits');
+        
+        this.goodHabits = savedGoodHabits ? JSON.parse(savedGoodHabits) : this.defaultHabits.good;
+        this.badHabits = savedBadHabits ? JSON.parse(savedBadHabits) : this.defaultHabits.bad;
+      },
+      
+      // 保存习惯数据
+      saveHabits() {
+        localStorage.setItem('goodHabits', JSON.stringify(this.goodHabits));
+        localStorage.setItem('badHabits', JSON.stringify(this.badHabits));
+      },
+      
+      // 加载打卡记录
+      loadRecords() {
+        const savedRecords = localStorage.getItem('habitRecords');
+        this.records = savedRecords ? JSON.parse(savedRecords) : {};
+      },
+      
+      // 保存打卡记录
+      saveRecords() {
+        localStorage.setItem('habitRecords', JSON.stringify(this.records));
+      },
+      
+      // 获取当前日期字符串（YYYY-MM-DD）
+      getCurrentDateString() {
+        const date = new Date();
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      },
+      
+      // 获取当前日期的星期几
+      getCurrentWeekday() {
+        const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+        return weekdays[new Date().getDay()];
+      },
+      
+      // 渲染日期显示
+      renderDate() {
+        document.getElementById('current-date').textContent = this.getCurrentDateString();
+        document.getElementById('current-weekday').textContent = this.getCurrentWeekday();
+      },
+      
+      // 渲染习惯打卡项
+      renderHabits() {
+        const goodHabitsContainer = document.getElementById('good-habits-container');
+        const badHabitsContainer = document.getElementById('bad-habits-container');
+        const today = this.getCurrentDateString();
+        
+        // 清空容器
+        goodHabitsContainer.innerHTML = '';
+        badHabitsContainer.innerHTML = '';
+        
+        // 渲染好习惯
+        this.goodHabits.forEach(habit => {
+          const isCompleted = this.records[today] && this.records[today][habit.id];
+          const count = isCompleted ? (habit.allowMultiple ? this.records[today][habit.id] : 1) : 0;
+          
+          const habitElement = document.createElement('div');
+          habitElement.className = `habit-item bg-white ${isCompleted ? 'border-l-4 border-primary' : ''}`;
+          habitElement.innerHTML = `
+            <div class="flex items-center">
+              <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                <i class="fa fa-check text-primary"></i>
+              </div>
+              <div>
+                <h4 class="font-medium">${habit.name}</h4>
+                <p class="text-sm text-gray-500">+${habit.points} 积分</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2">
+              ${habit.allowMultiple ? `
+                ${count > 0 ? `<span class="px-2 py-1 bg-blue-50 text-primary rounded-full text-sm">${count}次</span>` : ''}
+                <button class="decrement-habit p-2 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors ${count <= 0 ? 'opacity-50 cursor-not-allowed' : ''}" data-id="${habit.id}">
+                  <i class="fa fa-minus"></i>
+                </button>
+              ` : (isCompleted ? `<span class="px-2 py-1 bg-blue-50 text-primary rounded-full text-sm">已完成</span>` : '')}
+              <button class="increment-habit p-2 rounded-full ${isCompleted ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'} transition-colors" data-id="${habit.id}">
+                <i class="fa ${habit.allowMultiple ? 'fa-plus' : (isCompleted ? 'fa-refresh' : 'fa-check')}"></i>
+              </button>
+            </div>
+          `;
+          goodHabitsContainer.appendChild(habitElement);
+        });
+        
+        // 渲染坏习惯
+        this.badHabits.forEach(habit => {
+          const isRecorded = this.records[today] && this.records[today][habit.id];
+          const count = isRecorded ? (habit.allowMultiple ? this.records[today][habit.id] : 1) : 0;
+          
+          const habitElement = document.createElement('div');
+          habitElement.className = `habit-item bg-white ${isRecorded ? 'border-l-4 border-secondary' : ''}`;
+          habitElement.innerHTML = `
+            <div class="flex items-center">
+              <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mr-3">
+                <i class="fa fa-times text-secondary"></i>
+              </div>
+              <div>
+                <h4 class="font-medium">${habit.name}</h4>
+                <p class="text-sm text-gray-500">${habit.points} 积分</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2">
+              ${habit.allowMultiple ? `
+                ${count > 0 ? `<span class="px-2 py-1 bg-red-50 text-secondary rounded-full text-sm">${count}次</span>` : ''}
+                <button class="decrement-habit p-2 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors ${count <= 0 ? 'opacity-50 cursor-not-allowed' : ''}" data-id="${habit.id}">
+                  <i class="fa fa-minus"></i>
+                </button>
+              ` : (isRecorded ? `<span class="px-2 py-1 bg-red-50 text-secondary rounded-full text-sm">已记录</span>` : '')}
+              <button class="increment-habit p-2 rounded-full ${isRecorded ? 'bg-secondary/10 text-secondary' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'} transition-colors" data-id="${habit.id}">
+                <i class="fa ${habit.allowMultiple ? 'fa-plus' : (isRecorded ? 'fa-refresh' : 'fa-check')}"></i>
+              </button>
+            </div>
+          `;
+          badHabitsContainer.appendChild(habitElement);
+        });
+        
+        // 添加事件监听器
+        document.querySelectorAll('.increment-habit').forEach(button => {
+          button.addEventListener('click', (e) => this.incrementHabit(e.target.closest('.increment-habit').dataset.id));
+        });
+        
+        document.querySelectorAll('.decrement-habit').forEach(button => {
+          button.addEventListener('click', (e) => this.decrementHabit(e.target.closest('.decrement-habit').dataset.id));
+        });
+      },
+      
+      // 增加习惯打卡次数
+      incrementHabit(habitId) {
+        const today = this.getCurrentDateString();
+        const habit = this.getHabitById(habitId);
+        
+        if (!this.records[today]) {
+          this.records[today] = {};
+        }
+        
+        // 如果不允许多次打卡，且已经打卡，则重置
+        if (!habit.allowMultiple && this.records[today][habitId]) {
+          delete this.records[today][habitId];
+        } else {
+          // 否则增加次数
+          this.records[today][habitId] = (this.records[today][habitId] || 0) + 1;
+        }
+        
+        this.saveRecords();
+        this.renderHabits();
+        this.updateScores();
+        this.renderStatistics();
+        
+        // 添加动画反馈
+        const button = document.querySelector(`.increment-habit[data-id="${habitId}"]`);
+        button.classList.add('scale-125');
+        setTimeout(() => button.classList.remove('scale-125'), 300);
+      },
+      
+      // 减少习惯打卡次数
+      decrementHabit(habitId) {
+        const today = this.getCurrentDateString();
+        
+        if (this.records[today] && this.records[today][habitId]) {
+          if (this.records[today][habitId] <= 1) {
+            delete this.records[today][habitId];
+          } else {
+            this.records[today][habitId]--;
+          }
+          
+          this.saveRecords();
+          this.renderHabits();
+          this.updateScores();
+          this.renderStatistics();
+        }
+      },
+      
+      // 根据ID获取习惯
+      getHabitById(habitId) {
+        return [...this.goodHabits, ...this.badHabits].find(habit => habit.id === habitId);
+      },
+      
+      // 获取习惯类型（good或bad）
+      getHabitType(habitId) {
+        if (this.goodHabits.some(habit => habit.id === habitId)) {
+          return 'good';
+        }
+        return 'bad';
+      },
+      
+      // 更新积分显示
+      updateScores() {
+        const today = this.getCurrentDateString();
+        let todayPositive = 0;
+        let todayNegative = 0;
+        let totalPositive = 0;
+        let totalNegative = 0;
+        
+        // 计算今日积分
+        if (this.records[today]) {
+          Object.entries(this.records[today]).forEach(([habitId, count]) => {
+            const habit = this.getHabitById(habitId);
+            const points = habit.points * count;
+            
+            if (points > 0) {
+              todayPositive += points;
+            } else {
+              todayNegative += points;
+            }
+          });
+        }
+        
+        // 计算总积分
+        Object.values(this.records).forEach(dailyRecords => {
+          Object.entries(dailyRecords).forEach(([habitId, count]) => {
+            const habit = this.getHabitById(habitId);
+            const points = habit.points * count;
+            
+            if (points > 0) {
+              totalPositive += points;
+            } else {
+              totalNegative += points;
+            }
+          });
+        });
+        
+        // 更新显示
+        document.getElementById('today-positive').textContent = todayPositive;
+        document.getElementById('today-negative').textContent = todayNegative;
+        document.getElementById('total-positive').textContent = totalPositive;
+        document.getElementById('total-negative').textContent = totalNegative;
+      },
+      
+      // 渲染统计数据
+      renderStatistics() {
+        this.renderScoreChart();
+        this.renderHabitStats();
+      },
+      
+      // 渲染积分趋势图表
+      renderScoreChart() {
+        const ctx = document.getElementById('score-chart').getContext('2d');
+        
+        // 获取过去7天的日期
+        const dates = [];
+        const positiveScores = [];
+        const negativeScores = [];
+        
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+          const displayDate = `${date.getMonth() + 1}/${date.getDate()}`;
+          
+          dates.push(displayDate);
+          
+          // 计算当天的正积分和负积分
+          let positive = 0;
+          let negative = 0;
+          
+          if (this.records[dateStr]) {
+            Object.entries(this.records[dateStr]).forEach(([habitId, count]) => {
+              const habit = this.getHabitById(habitId);
+              const points = habit.points * count;
+              
+              if (points > 0) {
+                positive += points;
+              } else {
+                negative += points;
+              }
+            });
+          }
+          
+          positiveScores.push(positive);
+          negativeScores.push(negative);
+        }
+        
+        // 销毁已存在的图表
+        if (this.scoreChart) {
+          this.scoreChart.destroy();
+        }
+        
+        // 创建新图表
+        this.scoreChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: dates,
+            datasets: [
+              {
+                label: '正积分',
+                data: positiveScores,
+                borderColor: '#3B82F6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4,
+                fill: true
+              },
+              {
+                label: '负积分',
+                data: negativeScores,
+                borderColor: '#EF4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                tension: 0.4,
+                fill: true
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'top',
+              },
+              tooltip: {
+                mode: 'index',
+                intersect: false
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                grid: {
+                  drawBorder: false
+                }
+              },
+              x: {
+                grid: {
+                  display: false
+                }
+              }
+            },
+            interaction: {
+              mode: 'nearest',
+              axis: 'x',
+              intersect: false
+            },
+            animation: {
+              duration: 1000,
+              easing: 'easeOutQuart'
+            }
+          }
+        });
+      },
+      
+      // 渲染习惯统计
+      renderHabitStats() {
+        const goodHabitsStats = document.getElementById('good-habits-stats');
+        const badHabitsStats = document.getElementById('bad-habits-stats');
+        
+        // 清空容器
+        goodHabitsStats.innerHTML = '';
+        badHabitsStats.innerHTML = '';
+        
+        // 计算好习惯的总完成次数
+        this.goodHabits.forEach(habit => {
+          let totalCount = 0;
+          
+          Object.values(this.records).forEach(dailyRecords => {
+            if (dailyRecords[habit.id]) {
+              totalCount += dailyRecords[habit.id];
+            }
+          });
+          
+          const totalPoints = totalCount * habit.points;
+          
+          const statElement = document.createElement('div');
+          statElement.className = 'flex justify-between items-center p-3 bg-gray-50 rounded-lg';
+          statElement.innerHTML = `
+            <div>
+              <h4 class="font-medium">${habit.name}</h4>
+              <p class="text-sm text-gray-500">完成 ${totalCount} 次</p>
+            </div>
+            <span class="text-primary font-bold">+${totalPoints}</span>
+          `;
+          goodHabitsStats.appendChild(statElement);
+        });
+        
+        // 计算坏习惯的总记录次数
+        this.badHabits.forEach(habit => {
+          let totalCount = 0;
+          
+          Object.values(this.records).forEach(dailyRecords => {
+            if (dailyRecords[habit.id]) {
+              totalCount += dailyRecords[habit.id];
+            }
+          });
+          
+          const totalPoints = totalCount * habit.points;
+          
+          const statElement = document.createElement('div');
+          statElement.className = 'flex justify-between items-center p-3 bg-gray-50 rounded-lg';
+          statElement.innerHTML = `
+            <div>
+              <h4 class="font-medium">${habit.name}</h4>
+              <p class="text-sm text-gray-500">记录 ${totalCount} 次</p>
+            </div>
+            <span class="text-secondary font-bold">${totalPoints}</span>
+          `;
+          badHabitsStats.appendChild(statElement);
+        });
+      },
+      
+      // 渲染习惯管理列表
+      renderManageHabits() {
+        const manageGoodHabits = document.getElementById('manage-good-habits');
+        const manageBadHabits = document.getElementById('manage-bad-habits');
+        
+        // 清空容器
+        manageGoodHabits.innerHTML = '';
+        manageBadHabits.innerHTML = '';
+        
+        // 渲染好习惯管理项
+        this.goodHabits.forEach(habit => {
+          const habitElement = document.createElement('div');
+          habitElement.className = 'habit-item bg-white border border-gray-100';
+          habitElement.innerHTML = `
+            <div>
+              <h4 class="font-medium">${habit.name}</h4>
+              <p class="text-sm text-gray-500">+${habit.points} 积分 ${habit.allowMultiple ? '· 可多次打卡' : ''}</p>
+            </div>
+            <div class="flex space-x-2">
+              <button class="edit-habit p-2 rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors" data-id="${habit.id}">
+                <i class="fa fa-pencil"></i>
+              </button>
+              <button class="delete-habit p-2 rounded-full bg-gray-100 text-gray-700 hover:bg-red-100 hover:text-red-600 transition-colors" data-id="${habit.id}">
+                <i class="fa fa-trash"></i>
+              </button>
+            </div>
+          `;
+          manageGoodHabits.appendChild(habitElement);
+        });
+        
+        // 渲染坏习惯管理项
+        this.badHabits.forEach(habit => {
+          const habitElement = document.createElement('div');
+          habitElement.className = 'habit-item bg-white border border-gray-100';
+          habitElement.innerHTML = `
+            <div>
+              <h4 class="font-medium">${habit.name}</h4>
+              <p class="text-sm text-gray-500">${habit.points} 积分 ${habit.allowMultiple ? '· 可多次打卡' : ''}</p>
+            </div>
+            <div class="flex space-x-2">
+              <button class="edit-habit p-2 rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors" data-id="${habit.id}">
+                <i class="fa fa-pencil"></i>
+              </button>
+              <button class="delete-habit p-2 rounded-full bg-gray-100 text-gray-700 hover:bg-red-100 hover:text-red-600 transition-colors" data-id="${habit.id}">
+                <i class="fa fa-trash"></i>
+              </button>
+            </div>
+          `;
+          manageBadHabits.appendChild(habitElement);
+        });
+        
+        // 添加事件监听器
+        document.querySelectorAll('.edit-habit').forEach(button => {
+          button.addEventListener('click', (e) => this.openEditModal(e.target.closest('.edit-habit').dataset.id));
+        });
+        
+        document.querySelectorAll('.delete-habit').forEach(button => {
+          button.addEventListener('click', (e) => this.deleteHabit(e.target.closest('.delete-habit').dataset.id));
+        });
+      },
+      
+      // 打开编辑习惯模态框
+      openEditModal(habitId) {
+        const habit = this.getHabitById(habitId);
+        const modal = document.getElementById('edit-habit-modal');
+        
+        document.getElementById('edit-habit-id').value = habit.id;
+        document.getElementById('edit-habit-name').value = habit.name;
+        document.getElementById('edit-habit-points').value = habit.points;
+        document.getElementById('edit-habit-allow-multiple').checked = habit.allowMultiple;
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        // 添加动画效果
+        const modalContent = modal.querySelector('div');
+        modalContent.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+          modalContent.classList.remove('scale-95', 'opacity-0');
+          modalContent.classList.add('scale-100', 'opacity-100');
+        }, 10);
+      },
+      
+      // 关闭编辑习惯模态框
+      closeEditModal() {
+        const modal = document.getElementById('edit-habit-modal');
+        const modalContent = modal.querySelector('div');
+        
+        modalContent.classList.remove('scale-100', 'opacity-100');
+        modalContent.classList.add('scale-95', 'opacity-0');
+        
+        setTimeout(() => {
+          modal.classList.remove('flex');
+          modal.classList.add('hidden');
+        }, 300);
+      },
+      
+      // 编辑习惯
+      editHabit(habitId, updatedData) {
+        const habitType = this.getHabitType(habitId);
+        const habitsArray = habitType === 'good' ? this.goodHabits : this.badHabits;
+        const habitIndex = habitsArray.findIndex(habit => habit.id === habitId);
+        
+        if (habitIndex !== -1) {
+          habitsArray[habitIndex] = {
+            ...habitsArray[habitIndex],
+            ...updatedData
+          };
+          
+          this.saveHabits();
+          this.renderHabits();
+          this.renderManageHabits();
+          this.renderStatistics();
+        }
+      },
+      
+      // 删除习惯
+      deleteHabit(habitId) {
+        if (confirm('确定要删除这个习惯吗？相关的打卡记录也会被删除。')) {
+          const habitType = this.getHabitType(habitId);
+          
+          // 从习惯列表中删除
+          if (habitType === 'good') {
+            this.goodHabits = this.goodHabits.filter(habit => habit.id !== habitId);
+          } else {
+            this.badHabits = this.badHabits.filter(habit => habit.id !== habitId);
+          }
+          
+          // 从记录中删除
+          Object.keys(this.records).forEach(date => {
+            if (this.records[date][habitId]) {
+              delete this.records[date][habitId];
+            }
+          });
+          
+          this.saveHabits();
+          this.saveRecords();
+          this.renderHabits();
+          this.renderManageHabits();
+          this.renderStatistics();
+          this.updateScores();
+        }
+      },
+      
+      // 添加新习惯
+      addHabit(habitData) {
+        const newHabit = {
+          id: Date.now().toString(), // 使用时间戳作为唯一ID
+          ...habitData
+        };
+        
+        if (habitData.type === 'good') {
+          this.goodHabits.push(newHabit);
+        } else {
+          this.badHabits.push(newHabit);
+        }
+        
+        this.saveHabits();
+        this.renderHabits();
+        this.renderManageHabits();
+        this.renderStatistics();
+      },
+      
+      // 设置事件监听器
+      setupEventListeners() {
+        // 标签页切换
+        document.querySelectorAll('.tab-button, .tab-button-mobile').forEach(button => {
+          button.addEventListener('click', (e) => {
+            const tabName = e.target.closest('[data-tab]').dataset.tab;
+            
+            // 更新标签按钮状态
+            document.querySelectorAll('.tab-button, .tab-button-mobile').forEach(btn => {
+              btn.classList.remove('active', 'text-primary', 'border-primary', 'border-b-2');
+              btn.classList.add('text-gray-500');
+              
+              const icon = btn.querySelector('i');
+              if (icon) {
+                icon.classList.remove('text-primary');
+                icon.classList.add('text-gray-500');
+              }
+              
+              const span = btn.querySelector('span');
+              if (span) {
+                span.classList.remove('text-primary');
+                span.classList.add('text-gray-500');
+              }
+            });
+            
+            e.target.closest('[data-tab]').classList.add('active', 'text-primary');
+            if (e.target.closest('.tab-button')) {
+              e.target.closest('.tab-button').classList.add('border-b-2', 'border-primary');
+            }
+            
+            const activeIcon = e.target.closest('[data-tab]').querySelector('i');
+            if (activeIcon) {
+              activeIcon.classList.remove('text-gray-500');
+              activeIcon.classList.add('text-primary');
+            }
+            
+            const activeSpan = e.target.closest('[data-tab]').querySelector('span');
+            if (activeSpan) {
+              activeSpan.classList.remove('text-gray-500');
+              activeSpan.classList.add('text-primary');
+            }
+            
+            // 显示对应内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+              content.classList.add('hidden');
+              content.classList.remove('active');
+            });
+            
+            document.getElementById(tabName).classList.remove('hidden');
+            document.getElementById(tabName).classList.add('active');
+            
+            // 如果切换到统计标签，重新渲染图表以确保尺寸正确
+            if (tabName === '统计') {
+              this.renderScoreChart();
+            }
+          });
+        });
+        
+        // 添加习惯表单提交
+        document.getElementById('add-habit-form').addEventListener('submit', (e) => {
+          e.preventDefault();
+          
+          const name = document.getElementById('habit-name').value;
+          const type = document.getElementById('habit-type').value;
+          const points = parseInt(document.getElementById('habit-points').value);
+          const allowMultiple = document.getElementById('habit-allow-multiple').checked;
+          
+          // 验证积分值
+          if ((type === 'good' && points <= 0) || (type === 'bad' && points >= 0)) {
+            alert('好习惯请输入正积分，坏习惯请输入负积分');
+            return;
+          }
+          
+          this.addHabit({
+            name,
+            type,
+            points,
+            allowMultiple
+          });
+          
+          // 重置表单
+          e.target.reset();
+          
+          // 显示成功提示
+          const submitButton = e.target.querySelector('button[type="submit"]');
+          const originalText = submitButton.innerHTML;
+          submitButton.innerHTML = '<i class="fa fa-check mr-2"></i>添加成功';
+          submitButton.classList.remove('bg-primary');
+          submitButton.classList.add('bg-green-500');
+          
+          setTimeout(() => {
+            submitButton.innerHTML = originalText;
+            submitButton.classList.remove('bg-green-500');
+            submitButton.classList.add('bg-primary');
+          }, 2000);
+        });
+        
+        // 编辑习惯表单提交
+        document.getElementById('edit-habit-form').addEventListener('submit', (e) => {
+          e.preventDefault();
+          
+          const habitId = document.getElementById('edit-habit-id').value;
+          const name = document.getElementById('edit-habit-name').value;
+          const points = parseInt(document.getElementById('edit-habit-points').value);
+          const allowMultiple = document.getElementById('edit-habit-allow-multiple').checked;
+          
+          // 验证积分值
+          const habitType = this.getHabitType(habitId);
+          if ((habitType === 'good' && points <= 0) || (habitType === 'bad' && points >= 0)) {
+            alert('好习惯请输入正积分，坏习惯请输入负积分');
+            return;
+          }
+          
+          this.editHabit(habitId, {
+            name,
+            points,
+            allowMultiple
+          });
+          
+          this.closeEditModal();
+        });
+        
+        // 取消编辑
+        document.getElementById('cancel-edit').addEventListener('click', () => {
+          this.closeEditModal();
+        });
+        
+        // 点击模态框外部关闭
+        document.getElementById('edit-habit-modal').addEventListener('click', (e) => {
+          if (e.target === document.getElementById('edit-habit-modal')) {
+            this.closeEditModal();
+          }
+        });
+        
+        // 滚动时改变导航栏样式
+        window.addEventListener('scroll', () => {
+          const header = document.querySelector('header');
+          if (window.scrollY > 10) {
+            header.classList.add('py-2', 'shadow-lg');
+            header.classList.remove('py-3', 'shadow-md');
+          } else {
+            header.classList.add('py-3', 'shadow-md');
+            header.classList.remove('py-2', 'shadow-lg');
+          }
+        });
+      }
+    };
+    
+    // 初始化应用
+    document.addEventListener('DOMContentLoaded', () => {
+      HabitTracker.init();
+    });
+  </script>
+</body>
+</html>
