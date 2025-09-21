@@ -885,58 +885,12 @@
                 );
             },
             
-<<<<<<< HEAD
-            // 优先从错词表中抽取单词，正确3次后与普通单词概率相同
-=======
             // 优先从错词表中抽取单词，然后补充普通单词
->>>>>>> 3e2cecdc8b3d4905061c0538f633928025dbaebc
             getPrioritizedWords(count) {
                 const allWords = this.getWords();
                 if (allWords.length === 0) return [];
                 
                 const mistakes = MistakeManager.getMistakes();
-<<<<<<< HEAD
-                
-                // 创建单词池，错词表中的单词有更高的抽取概率
-                const wordPool = [];
-                
-                allWords.forEach(word => {
-                    // 检查单词是否在错词表中
-                    const mistake = mistakes.find(m => m.wordId === word.id);
-                    
-                    if (mistake) {
-                        // 错词表中的单词，增加出现次数（权重）
-                        // 可以根据错误次数调整权重，错误次数越多权重越大
-                        const weight = mistake.mistakeCount >= 5 ? 4 : mistake.mistakeCount + 1;
-                        for (let i = 0; i < weight; i++) {
-                            wordPool.push({...word});
-                        }
-                    } else {
-                        // 非错词表中的单词，添加一次
-                        wordPool.push({...word});
-                    }
-                });
-                
-                // 打乱单词池
-                wordPool.sort(() => 0.5 - Math.random());
-                
-                // 选择指定数量的单词，确保不重复
-                const selectedWords = [];
-                const selectedIds = new Set();
-                
-                for (const word of wordPool) {
-                    if (!selectedIds.has(word.id)) {
-                        selectedWords.push(word);
-                        selectedIds.add(word.id);
-                        
-                        if (selectedWords.length >= count) {
-                            break;
-                        }
-                    }
-                }
-                
-                return selectedWords;
-=======
                 const mistakeWordIds = mistakes.map(m => m.wordId);
                 
                 // 获取错词表中的单词
@@ -948,24 +902,22 @@
                 const shuffledMistakes = [...mistakeWords].sort(() => 0.5 - Math.random());
                 const shuffledRegulars = [...regularWords].sort(() => 0.5 - Math.random());
                 
-                // 优先使用错词，不足则用普通单词补充
+                // 优先从错误单词列表中抽取所有单词，单词库中其他单词被抽取的概率是一样的
                 const result = [];
-                let mistakeIndex = 0;
-                let regularIndex = 0;
                 
-                while (result.length < count && (mistakeIndex < shuffledMistakes.length || regularIndex < shuffledRegulars.length)) {
-                    // 先取完所有错词，再取普通单词
-                    if (mistakeIndex < shuffledMistakes.length) {
-                        result.push(shuffledMistakes[mistakeIndex]);
-                        mistakeIndex++;
-                    } else {
-                        result.push(shuffledRegulars[regularIndex]);
-                        regularIndex++;
-                    }
+                // 1. 先添加所有错词（如果数量不超过需求）
+                const mistakesToAdd = Math.min(count, shuffledMistakes.length);
+                result.push(...shuffledMistakes.slice(0, mistakesToAdd));
+                
+                // 2. 如果还需要更多单词，从普通单词中随机抽取
+                if (result.length < count) {
+                    const regularsNeeded = count - result.length;
+                    // 确保不会超过可用的普通单词数量
+                    const regularsToAdd = Math.min(regularsNeeded, shuffledRegulars.length);
+                    result.push(...shuffledRegulars.slice(0, regularsToAdd));
                 }
                 
                 return result;
->>>>>>> 3e2cecdc8b3d4905061c0538f633928025dbaebc
             },
             
             // 获取随机中文释义选项（增加到6项）
@@ -1004,34 +956,21 @@
             
             // 开始新测试
             startTest(settings) {
-<<<<<<< HEAD
-                const { testType, order, count, mistakesOnly = false } = settings;
+                const { testType, order, count, words } = settings;
                 let testWords = [];
                 
-                // 如果指定只测试错词表中的单词
-                if (mistakesOnly) {
-                    const allWords = VocabData.getWords();
-                    const mistakes = MistakeManager.getMistakes();
-                    const mistakeWordIds = mistakes.map(m => m.wordId);
-                    
-                    // 只获取错词表中的单词
-                    const mistakeWords = allWords.filter(word => mistakeWordIds.includes(word.id));
-                    
-                    // 打乱错词表
-                    testWords = [...mistakeWords].sort(() => 0.5 - Math.random());
-                } else if (order === 'random') {
-=======
-                const { testType, order, count } = settings;
-                let testWords = [];
-                
-                // 根据顺序类型获取单词
-                if (order === 'random') {
->>>>>>> 3e2cecdc8b3d4905061c0538f633928025dbaebc
-                    // 优先从错词表中获取
-                    testWords = VocabData.getPrioritizedWords(count);
+                // 如果提供了自定义单词列表，则使用它
+                if (words && words.length > 0) {
+                    testWords = words;
                 } else {
-                    // 顺序获取
-                    testWords = VocabData.getWords().slice(0, count);
+                    // 根据顺序类型获取单词
+                    if (order === 'random') {
+                        // 优先从错词表中获取
+                        testWords = VocabData.getPrioritizedWords(count);
+                    } else {
+                        // 顺序获取
+                        testWords = VocabData.getWords().slice(0, count);
+                    }
                 }
                 
                 this.currentTest = {
@@ -1241,9 +1180,15 @@
                 mobileMenu.classList.toggle('hidden');
             });
             
+            // 搜索单词功能
+            document.getElementById('search-words').addEventListener('input', function(e) {
+                const query = e.target.value;
+                renderWords(query);
+            });
+            
             // 渲染单词列表
-            function renderWords() {
-                const words = VocabData.getWords();
+            function renderWords(searchQuery = '') {
+                const words = VocabData.searchWords(searchQuery);
                 const wordsList = document.getElementById('words-list');
                 const noWordsMessage = document.getElementById('no-words-message');
                 const totalWords = document.getElementById('total-words');
@@ -1714,36 +1659,41 @@
             
             // 测试错词
             document.getElementById('test-mistakes-btn').addEventListener('click', function() {
+                const mistakes = MistakeManager.getMistakes();
+                if (mistakes.length === 0) {
+                    alert('没有错词可以测试！');
+                    return;
+                }
+                
                 // 切换到测试页面
                 document.getElementById('nav-test').click();
                 
                 // 设置测试参数
                 document.querySelector('input[name="test-type"][value="english-to-chinese-multiple"]').checked = true;
-<<<<<<< HEAD
-=======
                 document.querySelector('input[name="test-order"][value="random"]').checked = true;
->>>>>>> 3e2cecdc8b3d4905061c0538f633928025dbaebc
                 
                 // 设置测试数量为错词数量
-                const mistakeCount = MistakeManager.getMistakes().length;
-                document.getElementById('test-count').value = mistakeCount;
+                document.getElementById('test-count').value = mistakes.length;
                 
-<<<<<<< HEAD
-                // 启动测试（直接调用TestManager，不通过start-test-btn）
+                // 启动测试，确保只使用错词列表中的单词
                 setTimeout(() => {
-                    const testType = document.querySelector('input[name="test-type"]:checked').value;
+                    // 获取错词对应的单词数据
+                    const mistakeWordIds = mistakes.map(mistake => mistake.wordId);
+                    const allWords = VocabData.getWords();
+                    const mistakeWords = allWords.filter(word => mistakeWordIds.includes(word.id));
                     
-                    const test = TestManager.startTest({
-                        testType,
-                        order: 'random',
-                        count: mistakeCount,
-                        mistakesOnly: true
-                    });
-                    
-                    if (test.words.length === 0) {
-                        alert('No words available for testing. Please add some words first.');
+                    if (mistakeWords.length === 0) {
+                        alert('无法找到对应的错词数据！');
                         return;
                     }
+                    
+                    // 使用错词列表中的单词进行测试
+                    const testType = document.querySelector('input[name="test-type"]:checked').value;
+                    const test = TestManager.startTest({
+                        testType,
+                        words: mistakeWords, // 只使用错词列表中的单词
+                        order: 'random'
+                    });
                     
                     // 显示测试进行中界面
                     document.getElementById('test-settings').classList.add('hidden');
@@ -1756,11 +1706,6 @@
                     
                     // 显示第一个问题
                     showCurrentQuestion();
-=======
-                // 启动测试
-                setTimeout(() => {
-                    document.getElementById('start-test-btn').click();
->>>>>>> 3e2cecdc8b3d4905061c0538f633928025dbaebc
                 }, 500);
             });
             
