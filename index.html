@@ -886,9 +886,19 @@
                 // 获取非错词表中的单词
                 const regularWords = allWords.filter(word => !mistakeWordIds.includes(word.id));
                 
-                // 打乱两个列表
-                const shuffledMistakes = [...mistakeWords].sort(() => 0.5 - Math.random());
-                const shuffledRegulars = [...regularWords].sort(() => 0.5 - Math.random());
+                // 打乱两个列表 - 使用Fisher-Yates洗牌算法确保在所有浏览器中都能获得良好的随机性
+                const shuffledMistakes = this.shuffleArray([...mistakeWords]);
+                const shuffledRegulars = this.shuffleArray([...regularWords]);
+            },
+            
+            // Fisher-Yates 洗牌算法 - 提供更好的随机性和浏览器兼容性
+            shuffleArray(array) {
+                const newArray = [...array];
+                for (let i = newArray.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+                }
+                return newArray;
                 
                 // 优先从错误单词列表中抽取所有单词，单词库中其他单词被抽取的概率是一样的
                 const result = [];
@@ -922,11 +932,11 @@
                 if (actualCount < 2) return [correctChinese];
                 
                 // 随机选择其他选项
-                const shuffled = [...otherWords].sort(() => 0.5 - Math.random());
+                const shuffled = this.shuffleArray([...otherWords]);
                 const options = [correctChinese, ...shuffled.slice(0, actualCount - 1)];
                 
                 // 打乱选项顺序
-                return options.sort(() => 0.5 - Math.random());
+                return this.shuffleArray(options);
             },
             
             // 获取随机英文选项（抽取5个英文单词搭配正确单词）
@@ -943,11 +953,11 @@
                 if (actualCount < 2) return [correctEnglish];
                 
                 // 随机选择其他选项（从单词表中随机抽5个英文单词）
-                const shuffled = [...otherWords].sort(() => 0.5 - Math.random());
+                const shuffled = this.shuffleArray([...otherWords]);
                 const options = [correctEnglish, ...shuffled.slice(0, actualCount - 1)];
                 
                 // 打乱选项顺序
-                return options.sort(() => 0.5 - Math.random());
+                return this.shuffleArray(options);
             },
             
             // 事件触发器
