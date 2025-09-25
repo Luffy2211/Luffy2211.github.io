@@ -873,6 +873,16 @@
                 );
             },
             
+            // Fisher-Yates 洗牌算法 - 提供更好的随机性和浏览器兼容性
+            shuffleArray(array) {
+                const newArray = [...array];
+                for (let i = newArray.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+                }
+                return newArray;
+            },
+            
             // 优先从错词表中抽取单词，然后补充普通单词
             getPrioritizedWords(count) {
                 const allWords = this.getWords();
@@ -889,16 +899,6 @@
                 // 打乱两个列表 - 使用Fisher-Yates洗牌算法确保在所有浏览器中都能获得良好的随机性
                 const shuffledMistakes = this.shuffleArray([...mistakeWords]);
                 const shuffledRegulars = this.shuffleArray([...regularWords]);
-            },
-            
-            // Fisher-Yates 洗牌算法 - 提供更好的随机性和浏览器兼容性
-            shuffleArray(array) {
-                const newArray = [...array];
-                for (let i = newArray.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-                }
-                return newArray;
                 
                 // 优先从错误单词列表中抽取所有单词，单词库中其他单词被抽取的概率是一样的
                 const result = [];
