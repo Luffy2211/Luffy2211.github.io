@@ -247,6 +247,50 @@
   <div id="edit-habit-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 transform transition-all">
       <h3 class="text-xl font-bold mb-4">编辑习惯</h3>
+    </div>
+  </div>
+  
+  <!-- 模态框：习惯详情 -->
+  <div id="habit-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-3xl p-6 transform transition-all">
+      <div class="flex justify-between items-center mb-6">
+        <h3 id="habit-detail-title" class="text-xl font-bold"></h3>
+        <button id="close-habit-detail" class="text-gray-500 hover:text-gray-700 transition-colors">
+          <i class="fa fa-times text-xl"></i>
+        </button>
+      </div>
+      <div class="flex justify-between items-center mb-4 px-2">
+        <div class="flex items-center space-x-2">
+          <span id="habit-detail-points" class="font-semibold"></span>
+          <span id="habit-detail-type" class="px-2 py-0.5 text-xs rounded-full"></span>
+        </div>
+        <div class="text-sm text-gray-500">
+          <span id="habit-detail-period">过去30天</span>
+        </div>
+      </div>
+      <div class="h-80">
+        <canvas id="habit-detail-chart"></canvas>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+        <div class="bg-gray-50 p-4 rounded-lg text-center">
+          <p class="text-gray-500 text-sm">总次数</p>
+          <p id="habit-detail-total-count" class="font-bold text-lg mt-1"></p>
+        </div>
+        <div class="bg-gray-50 p-4 rounded-lg text-center">
+          <p class="text-gray-500 text-sm">总积分</p>
+          <p id="habit-detail-total-points" class="font-bold text-lg mt-1"></p>
+        </div>
+        <div class="bg-gray-50 p-4 rounded-lg text-center">
+          <p class="text-gray-500 text-sm">最长连续</p>
+          <p id="habit-detail-streak" class="font-bold text-lg mt-1"></p>
+        </div>
+        <div class="bg-gray-50 p-4 rounded-lg text-center">
+          <p class="text-gray-500 text-sm">完成率</p>
+          <p id="habit-detail-completion" class="font-bold text-lg mt-1"></p>
+        </div>
+      </div>
+    </div>
+  </div>
       <form id="edit-habit-form" class="space-y-4">
         <input type="hidden" id="edit-habit-id">
         
@@ -643,6 +687,183 @@
         });
       },
       
+      // 显示习惯详情模态框
+      showHabitDetail(habitId) {
+        const habit = this.getHabitById(habitId);
+        const habitType = this.getHabitType(habitId);
+        const modal = document.getElementById('habit-detail-modal');
+        
+        // 设置模态框标题和信息
+        document.getElementById('habit-detail-title').textContent = habit.name;
+        document.getElementById('habit-detail-points').textContent = habitType === 'good' ? `+${habit.points} 积分/次` : `${habit.points} 积分/次`;
+        document.getElementById('habit-detail-type').textContent = habitType === 'good' ? '好习惯' : '坏习惯';
+        document.getElementById('habit-detail-type').className = habitType === 'good' ? 'px-2 py-0.5 text-xs rounded-full bg-blue-100 text-primary' : 'px-2 py-0.5 text-xs rounded-full bg-red-100 text-secondary';
+        
+        // 计算过去30天的数据
+        const { totalCount, totalPoints, streak, completionRate, dates, counts } = this.calculateHabitDetailStats(habitId);
+        
+        // 设置统计信息
+        document.getElementById('habit-detail-total-count').textContent = totalCount;
+        document.getElementById('habit-detail-total-points').textContent = habitType === 'good' ? `+${totalPoints}` : totalPoints;
+        document.getElementById('habit-detail-streak').textContent = `${streak} 天`;
+        document.getElementById('habit-detail-completion').textContent = `${completionRate}%`;
+        
+        // 渲染图表
+        this.renderHabitDetailChart(dates, counts, habitType);
+        
+        // 显示模态框
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        // 添加动画效果
+        const modalContent = modal.querySelector('div');
+        modalContent.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+          modalContent.classList.remove('scale-95', 'opacity-0');
+          modalContent.classList.add('scale-100', 'opacity-100');
+        }, 10);
+      },
+      
+      // 关闭习惯详情模态框
+      closeHabitDetailModal() {
+        const modal = document.getElementById('habit-detail-modal');
+        const modalContent = modal.querySelector('div');
+        
+        modalContent.classList.remove('scale-100', 'opacity-100');
+        modalContent.classList.add('scale-95', 'opacity-0');
+        
+        setTimeout(() => {
+          modal.classList.remove('flex');
+          modal.classList.add('hidden');
+        }, 300);
+      },
+      
+      // 计算习惯详情统计数据
+      calculateHabitDetailStats(habitId) {
+        const dates = [];
+        const counts = [];
+        let totalCount = 0;
+        let activeDays = 0;
+        let currentStreak = 0;
+        let maxStreak = 0;
+        
+        const habit = this.getHabitById(habitId);
+        
+        // 获取过去30天的日期
+        for (let i = 29; i >= 0; i--) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+          const displayDate = `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
+          
+          dates.push(displayDate);
+          
+          // 获取当天的打卡次数
+          const count = this.records[dateStr] && this.records[dateStr][habitId] ? this.records[dateStr][habitId] : 0;
+          counts.push(count);
+          totalCount += count;
+          
+          // 统计活跃天数
+          if (count > 0) {
+            activeDays++;
+            currentStreak++;
+            maxStreak = Math.max(maxStreak, currentStreak);
+          } else {
+            currentStreak = 0;
+          }
+        }
+        
+        // 计算完成率
+        const completionRate = Math.round((activeDays / 30) * 100);
+        
+        // 计算总积分
+        const totalPoints = totalCount * habit.points;
+        
+        return {
+          totalCount,
+          totalPoints,
+          streak: maxStreak,
+          completionRate,
+          dates,
+          counts
+        };
+      },
+      
+      // 渲染习惯详情图表
+      renderHabitDetailChart(dates, counts, habitType) {
+        const ctx = document.getElementById('habit-detail-chart').getContext('2d');
+        
+        // 销毁已存在的图表
+        if (this.habitDetailChart) {
+          this.habitDetailChart.destroy();
+        }
+        
+        // 创建新图表
+        this.habitDetailChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: dates,
+            datasets: [{
+              label: habitType === 'good' ? '完成次数' : '记录次数',
+              data: counts,
+              backgroundColor: habitType === 'good' ? 'rgba(59, 130, 246, 0.6)' : 'rgba(239, 68, 68, 0.6)',
+              borderColor: habitType === 'good' ? 'rgba(59, 130, 246, 1)' : 'rgba(239, 68, 68, 1)',
+              borderWidth: 1,
+              borderRadius: 4,
+              borderSkipped: false
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                  label: function(context) {
+                    return `${habitType === 'good' ? '完成' : '记录'}: ${context.parsed.y} 次`;
+                  }
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  stepSize: 1
+                },
+                grid: {
+                  drawBorder: false
+                }
+              },
+              x: {
+                grid: {
+                  display: false
+                },
+                ticks: {
+                  maxRotation: 0,
+                  autoSkip: true,
+                  maxTicksLimit: 10
+                }
+              }
+            },
+            interaction: {
+              mode: 'nearest',
+              axis: 'x',
+              intersect: false
+            },
+            animation: {
+              duration: 1000,
+              easing: 'easeOutQuart'
+            }
+          }
+        });
+      },
+      
       // 渲染习惯统计
       renderHabitStats() {
         const goodHabitsStats = document.getElementById('good-habits-stats');
@@ -665,14 +886,19 @@
           const totalPoints = totalCount * habit.points;
           
           const statElement = document.createElement('div');
-          statElement.className = 'flex justify-between items-center p-3 bg-gray-50 rounded-lg';
+          statElement.className = 'flex justify-between items-center p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors';
+          statElement.dataset.id = habit.id;
           statElement.innerHTML = `
             <div>
               <h4 class="font-medium">${habit.name}</h4>
               <p class="text-sm text-gray-500">完成 ${totalCount} 次</p>
             </div>
-            <span class="text-primary font-bold">+${totalPoints}</span>
+            <div class="flex items-center space-x-3">
+              <span class="text-primary font-bold">+${totalPoints}</span>
+              <i class="fa fa-chevron-right text-gray-400 transition-transform duration-300"></i>
+            </div>
           `;
+          statElement.addEventListener('click', () => this.showHabitDetail(habit.id));
           goodHabitsStats.appendChild(statElement);
         });
         
@@ -689,14 +915,19 @@
           const totalPoints = totalCount * habit.points;
           
           const statElement = document.createElement('div');
-          statElement.className = 'flex justify-between items-center p-3 bg-gray-50 rounded-lg';
+          statElement.className = 'flex justify-between items-center p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors';
+          statElement.dataset.id = habit.id;
           statElement.innerHTML = `
             <div>
               <h4 class="font-medium">${habit.name}</h4>
               <p class="text-sm text-gray-500">记录 ${totalCount} 次</p>
             </div>
-            <span class="text-secondary font-bold">${totalPoints}</span>
+            <div class="flex items-center space-x-3">
+              <span class="text-secondary font-bold">${totalPoints}</span>
+              <i class="fa fa-chevron-right text-gray-400 transition-transform duration-300"></i>
+            </div>
           `;
+          statElement.addEventListener('click', () => this.showHabitDetail(habit.id));
           badHabitsStats.appendChild(statElement);
         });
       },
@@ -866,6 +1097,15 @@
       
       // 设置事件监听器
       setupEventListeners() {
+        // 习惯详情模态框关闭按钮
+        document.getElementById('close-habit-detail').addEventListener('click', () => this.closeHabitDetailModal());
+        
+        // 点击模态框外部关闭
+        document.getElementById('habit-detail-modal').addEventListener('click', (e) => {
+          if (e.target === document.getElementById('habit-detail-modal')) {
+            this.closeHabitDetailModal();
+          }
+        });
         // 标签页切换
         document.querySelectorAll('.tab-button, .tab-button-mobile').forEach(button => {
           button.addEventListener('click', (e) => {
