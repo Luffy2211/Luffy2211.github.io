@@ -1006,7 +1006,8 @@
             
             // 获取当前问题
             getCurrentQuestion() {
-                if (!this.currentTest || this.currentQuestionIndex >= this.currentTest.words.length) {
+                // 确保currentTest和currentQuestionIndex正确初始化
+                if (!this.currentTest || typeof this.currentQuestionIndex === 'undefined' || this.currentQuestionIndex === null || this.currentQuestionIndex >= this.currentTest.words.length) {
                     return null;
                 }
                 
@@ -1789,8 +1790,10 @@
                 document.getElementById('total-questions').textContent = test.totalQuestions;
                 document.getElementById('current-question').textContent = '1';
                 
-                // 显示第一个问题
-                showCurrentQuestion();
+                // 强制在UI更新后显示第一个问题，解决iOS Safari兼容性问题
+                setTimeout(() => {
+                    showCurrentQuestion();
+                }, 50);
             });
             
             // 选择题选项点击事件 - 直接提交答案
