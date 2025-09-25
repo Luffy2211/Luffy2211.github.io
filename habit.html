@@ -252,41 +252,128 @@
   
   <!-- 模态框：习惯详情 -->
   <div id="habit-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
-    <div class="bg-white rounded-xl shadow-xl w-full max-w-3xl p-6 transform transition-all">
-      <div class="flex justify-between items-center mb-6">
-        <h3 id="habit-detail-title" class="text-xl font-bold"></h3>
-        <button id="close-habit-detail" class="text-gray-500 hover:text-gray-700 transition-colors">
-          <i class="fa fa-times text-xl"></i>
-        </button>
-      </div>
-      <div class="flex justify-between items-center mb-4 px-2">
-        <div class="flex items-center space-x-2">
-          <span id="habit-detail-points" class="font-semibold"></span>
-          <span id="habit-detail-type" class="px-2 py-0.5 text-xs rounded-full"></span>
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto transform transition-all">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-6">
+          <div class="flex items-center">
+            <h3 id="habit-detail-title" class="text-xl font-bold"></h3>
+            <button id="habit-detail-edit" class="ml-3 text-gray-400 hover:text-primary transition-colors">
+              <i class="fa fa-pencil"></i>
+            </button>
+          </div>
+          <div class="flex items-center space-x-3">
+            <button id="habit-detail-info" class="text-gray-400 hover:text-gray-600 transition-colors">
+              <i class="fa fa-lightbulb-o text-yellow-500"></i>
+            </button>
+            <button id="close-habit-detail" class="text-gray-500 hover:text-gray-700 transition-colors">
+              <i class="fa fa-times text-xl"></i>
+            </button>
+          </div>
         </div>
-        <div class="text-sm text-gray-500">
-          <span id="habit-detail-period">过去30天</span>
+        
+        <!-- 往前100天状态 -->
+        <div class="mb-8">
+          <div class="flex justify-between items-center mb-4">
+              <h4 class="font-semibold">往前100天状态</h4>
+            </div>
+          <div id="habit-detail-calendar" class="flex flex-wrap gap-[8px] w-full">
+            <!-- 日历格子将通过JS动态生成 -->
+          </div>
         </div>
-      </div>
-      <div class="h-80">
-        <canvas id="habit-detail-chart"></canvas>
-      </div>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-        <div class="bg-gray-50 p-4 rounded-lg text-center">
-          <p class="text-gray-500 text-sm">总次数</p>
-          <p id="habit-detail-total-count" class="font-bold text-lg mt-1"></p>
+        
+        <!-- 统计数据卡片 -->
+        <div class="grid grid-cols-2 gap-4 mb-8">
+          <div class="bg-white border border-gray-100 rounded-lg p-4 shadow-sm">
+            <div class="flex items-center justify-center w-10 h-10 bg-blue-50 rounded-full mb-3 mx-auto">
+              <i class="fa fa-calendar text-primary"></i>
+            </div>
+            <p class="text-center text-sm text-gray-500">九月完成</p>
+            <p id="habit-detail-month-count" class="text-center text-2xl font-bold mt-1">0 天</p>
+          </div>
+          
+          <div class="bg-white border border-gray-100 rounded-lg p-4 shadow-sm">
+            <div class="flex items-center justify-center w-10 h-10 bg-green-50 rounded-full mb-3 mx-auto">
+              <i class="fa fa-check-circle text-green-500"></i>
+            </div>
+            <p class="text-center text-sm text-gray-500">总完成</p>
+            <p id="habit-detail-total-days" class="text-center text-2xl font-bold mt-1">0 天</p>
+          </div>
+          
+          <div class="bg-white border border-gray-100 rounded-lg p-4 shadow-sm">
+            <div class="flex items-center justify-center w-10 h-10 bg-purple-50 rounded-full mb-3 mx-auto">
+              <i class="fa fa-clock-o text-purple-500"></i>
+            </div>
+            <p class="text-center text-sm text-gray-500">当前连续</p>
+            <p id="habit-detail-current-streak" class="text-center text-2xl font-bold mt-1">0 天</p>
+          </div>
+          
+          <div class="bg-white border border-gray-100 rounded-lg p-4 shadow-sm">
+            <div class="flex items-center justify-center w-10 h-10 bg-orange-50 rounded-full mb-3 mx-auto">
+              <i class="fa fa-trophy text-orange-500"></i>
+            </div>
+            <p class="text-center text-sm text-gray-500">最佳连续</p>
+            <p id="habit-detail-best-streak" class="text-center text-2xl font-bold mt-1">0 天</p>
+          </div>
+          
+          <div class="bg-white border border-gray-100 rounded-lg p-4 shadow-sm">
+            <div class="flex items-center justify-center w-10 h-10 bg-indigo-50 rounded-full mb-3 mx-auto">
+              <i class="fa fa-line-chart text-indigo-500"></i>
+            </div>
+            <p class="text-center text-sm text-gray-500">9月完成量</p>
+            <p id="habit-detail-month-quantity" class="text-center text-2xl font-bold mt-1">0</p>
+          </div>
+          
+          <div class="bg-white border border-gray-100 rounded-lg p-4 shadow-sm">
+            <div class="flex items-center justify-center w-10 h-10 bg-pink-50 rounded-full mb-3 mx-auto">
+              <i class="fa fa-bullseye text-pink-500"></i>
+            </div>
+            <p class="text-center text-sm text-gray-500">总完成量</p>
+            <p id="habit-detail-total-quantity" class="text-center text-2xl font-bold mt-1">0</p>
+          </div>
+          
+          <div class="bg-white border border-gray-100 rounded-lg p-4 shadow-sm">
+            <div class="flex items-center justify-center w-10 h-10 bg-cyan-50 rounded-full mb-3 mx-auto">
+              <i class="fa fa-bar-chart text-cyan-500"></i>
+            </div>
+            <p class="text-center text-sm text-gray-500">每日平均</p>
+            <p id="habit-detail-daily-average" class="text-center text-2xl font-bold mt-1">0.00</p>
+          </div>
+          
+          <div class="bg-white border border-gray-100 rounded-lg p-4 shadow-sm">
+            <div class="flex items-center justify-center w-10 h-10 bg-amber-50 rounded-full mb-3 mx-auto">
+              <i class="fa fa-percent text-amber-500"></i>
+            </div>
+            <p class="text-center text-sm text-gray-500">总完成率</p>
+            <p id="habit-detail-completion-rate" class="text-center text-2xl font-bold mt-1">0.00 %</p>
+          </div>
         </div>
-        <div class="bg-gray-50 p-4 rounded-lg text-center">
-          <p class="text-gray-500 text-sm">总积分</p>
-          <p id="habit-detail-total-points" class="font-bold text-lg mt-1"></p>
+        
+        <!-- 日志 -->
+        <div class="mb-8">
+          <div class="flex justify-between items-center mb-4">
+            <h4 class="font-semibold">日志</h4>
+            <button id="habit-detail-more-logs" class="text-sm text-primary hover:text-primary/80 transition-colors flex items-center">
+              更多 <i class="fa fa-chevron-right ml-1 text-xs"></i>
+            </button>
+          </div>
+          <div id="habit-detail-logs" class="space-y-3">
+            <p class="text-center text-gray-400 py-6">没有日志</p>
+          </div>
         </div>
-        <div class="bg-gray-50 p-4 rounded-lg text-center">
-          <p class="text-gray-500 text-sm">最长连续</p>
-          <p id="habit-detail-streak" class="font-bold text-lg mt-1"></p>
-        </div>
-        <div class="bg-gray-50 p-4 rounded-lg text-center">
-          <p class="text-gray-500 text-sm">完成率</p>
-          <p id="habit-detail-completion" class="font-bold text-lg mt-1"></p>
+        
+        <!-- 完成量统计 -->
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <h4 class="font-semibold">完成量统计</h4>
+            <div class="flex space-x-2">
+              <button id="chart-period-week" class="habit-period-filter active px-3 py-1 text-sm rounded-full bg-primary text-white">本周</button>
+              <button id="chart-period-month" class="habit-period-filter px-3 py-1 text-sm rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">本月</button>
+              <button id="chart-period-year" class="habit-period-filter px-3 py-1 text-sm rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">本年</button>
+            </div>
+          </div>
+          <div class="h-64">
+            <canvas id="habit-detail-chart"></canvas>
+          </div>
         </div>
       </div>
     </div>
@@ -344,6 +431,7 @@
         this.renderManageHabits();
         this.updateScores();
         this.setupEventListeners();
+        this.currentDetailHabitId = null; // 初始化当前查看的习惯ID
       },
       
       // 加载习惯数据
@@ -693,35 +781,222 @@
         const habitType = this.getHabitType(habitId);
         const modal = document.getElementById('habit-detail-modal');
         
+        // 保存当前查看的习惯ID
+        this.currentDetailHabitId = habitId;
+        
         // 设置模态框标题和信息
         document.getElementById('habit-detail-title').textContent = habit.name;
-        document.getElementById('habit-detail-points').textContent = habitType === 'good' ? `+${habit.points} 积分/次` : `${habit.points} 积分/次`;
-        document.getElementById('habit-detail-type').textContent = habitType === 'good' ? '好习惯' : '坏习惯';
-        document.getElementById('habit-detail-type').className = habitType === 'good' ? 'px-2 py-0.5 text-xs rounded-full bg-blue-100 text-primary' : 'px-2 py-0.5 text-xs rounded-full bg-red-100 text-secondary';
         
-        // 计算过去30天的数据
-        const { totalCount, totalPoints, streak, completionRate, dates, counts } = this.calculateHabitDetailStats(habitId);
+        // 计算各种统计数据
+        const currentYear = new Date().getFullYear();
+        const currentMonth = new Date().getMonth() + 1;
         
-        // 设置统计信息
-        document.getElementById('habit-detail-total-count').textContent = totalCount;
-        document.getElementById('habit-detail-total-points').textContent = habitType === 'good' ? `+${totalPoints}` : totalPoints;
-        document.getElementById('habit-detail-streak').textContent = `${streak} 天`;
-        document.getElementById('habit-detail-completion').textContent = `${completionRate}%`;
+        // 生成往前100天状态
+        this.renderHabitCalendar(habitId);
         
-        // 渲染图表
-        this.renderHabitDetailChart(dates, counts, habitType);
+        // 计算并设置详细统计数据
+        this.updateHabitDetailStats(habitId, currentMonth, currentYear);
+        
+        // 渲染默认的完成量图表（本周）
+        this.renderHabitDetailChart(habitId, 'week');
         
         // 显示模态框
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         
         // 添加动画效果
-        const modalContent = modal.querySelector('div');
+        const modalContent = modal.querySelector('div > div');
         modalContent.classList.add('scale-95', 'opacity-0');
         setTimeout(() => {
           modalContent.classList.remove('scale-95', 'opacity-0');
           modalContent.classList.add('scale-100', 'opacity-100');
+          // 初始化图表周期按钮样式，默认选择"本周"
+          this.updateChartPeriodButtons('week');
         }, 10);
+      },
+      
+      // 生成往前100天习惯状态
+      renderHabitCalendar(habitId) {
+        const calendarContainer = document.getElementById('habit-detail-calendar');
+        calendarContainer.innerHTML = '';
+        
+        // 生成过去100天的日期
+        for (let i = 99; i >= 0; i--) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+          
+          const day = document.createElement('div');
+          day.className = 'h-[8px] w-[8px] rounded-sm bg-gray-300';
+          
+          // 检查当天是否有打卡记录
+          if (this.records[dateStr] && this.records[dateStr][habitId] && this.records[dateStr][habitId] > 0) {
+            day.className = 'h-[8px] w-[8px] rounded-sm bg-green-500';
+          }
+          
+          calendarContainer.appendChild(day);
+        }
+      },
+      
+      // 更新习惯详细统计数据
+      updateHabitDetailStats(habitId, month, year) {
+        const habit = this.getHabitById(habitId);
+        const habitType = this.getHabitType(habitId);
+        
+        // 计算本月完成天数
+        const monthCount = this.calculateMonthCompletionDays(habitId, month, year);
+        
+        // 计算总完成天数
+        const totalDays = this.calculateTotalCompletionDays(habitId);
+        
+        // 计算当前连续天数
+        const currentStreak = this.calculateCurrentStreak(habitId);
+        
+        // 计算最佳连续天数
+        const bestStreak = this.calculateBestStreak(habitId);
+        
+        // 计算本月完成量
+        const monthQuantity = this.calculateMonthQuantity(habitId, month, year);
+        
+        // 计算总完成量
+        const totalQuantity = this.calculateTotalQuantity(habitId);
+        
+        // 计算每日平均
+        const dailyAverage = this.calculateDailyAverage(habitId);
+        
+        // 计算总完成率
+        const completionRate = this.calculateCompletionRate(habitId);
+        
+        // 更新UI
+        document.getElementById('habit-detail-month-count').textContent = `${monthCount} 天`;
+        document.getElementById('habit-detail-total-days').textContent = `${totalDays} 天`;
+        document.getElementById('habit-detail-current-streak').textContent = `${currentStreak} 天`;
+        document.getElementById('habit-detail-best-streak').textContent = `${bestStreak} 天`;
+        document.getElementById('habit-detail-month-quantity').textContent = monthQuantity;
+        document.getElementById('habit-detail-total-quantity').textContent = totalQuantity;
+        document.getElementById('habit-detail-daily-average').textContent = dailyAverage.toFixed(2);
+        document.getElementById('habit-detail-completion-rate').textContent = `${completionRate.toFixed(2)} %`;
+      },
+      
+      // 计算本月完成天数
+      calculateMonthCompletionDays(habitId, month, year) {
+        let count = 0;
+        const monthStr = String(month).padStart(2, '0');
+        
+        Object.keys(this.records).forEach(dateStr => {
+          if (dateStr.startsWith(`${year}-${monthStr}`) && this.records[dateStr][habitId] && this.records[dateStr][habitId] > 0) {
+            count++;
+          }
+        });
+        
+        return count;
+      },
+      
+      // 计算总完成天数
+      calculateTotalCompletionDays(habitId) {
+        let count = 0;
+        
+        Object.keys(this.records).forEach(dateStr => {
+          if (this.records[dateStr][habitId] && this.records[dateStr][habitId] > 0) {
+            count++;
+          }
+        });
+        
+        return count;
+      },
+      
+      // 计算当前连续天数
+      calculateCurrentStreak(habitId) {
+        let streak = 0;
+        const today = new Date();
+        
+        for (let i = 0; i < 365; i++) {
+          const date = new Date(today);
+          date.setDate(date.getDate() - i);
+          const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+          
+          if (this.records[dateStr] && this.records[dateStr][habitId] && this.records[dateStr][habitId] > 0) {
+            streak++;
+          } else if (i > 0) {
+            // 如果不是今天并且没有记录，则连续中断
+            break;
+          }
+        }
+        
+        return streak;
+      },
+      
+      // 计算最佳连续天数
+      calculateBestStreak(habitId) {
+        let maxStreak = 0;
+        let currentStreak = 0;
+        const sortedDates = Object.keys(this.records).sort();
+        
+        for (let i = 0; i < sortedDates.length; i++) {
+          const dateStr = sortedDates[i];
+          
+          if (this.records[dateStr][habitId] && this.records[dateStr][habitId] > 0) {
+            currentStreak++;
+            maxStreak = Math.max(maxStreak, currentStreak);
+          } else {
+            currentStreak = 0;
+          }
+        }
+        
+        return maxStreak;
+      },
+      
+      // 计算本月完成量
+      calculateMonthQuantity(habitId, month, year) {
+        let quantity = 0;
+        const monthStr = String(month).padStart(2, '0');
+        
+        Object.keys(this.records).forEach(dateStr => {
+          if (dateStr.startsWith(`${year}-${monthStr}`) && this.records[dateStr][habitId]) {
+            quantity += this.records[dateStr][habitId];
+          }
+        });
+        
+        return quantity;
+      },
+      
+      // 计算总完成量
+      calculateTotalQuantity(habitId) {
+        let quantity = 0;
+        
+        Object.values(this.records).forEach(dailyRecords => {
+          if (dailyRecords[habitId]) {
+            quantity += dailyRecords[habitId];
+          }
+        });
+        
+        return quantity;
+      },
+      
+      // 计算每日平均
+      calculateDailyAverage(habitId) {
+        const totalQuantity = this.calculateTotalQuantity(habitId);
+        const totalDays = this.calculateTotalCompletionDays(habitId);
+        
+        return totalDays > 0 ? totalQuantity / totalDays : 0;
+      },
+      
+      // 计算总完成率
+      calculateCompletionRate(habitId) {
+        const totalDays = this.calculateTotalCompletionDays(habitId);
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 365); // 过去一年
+        
+        // 计算从开始记录到现在的天数
+        let daysSinceStart = 365;
+        const recordDates = Object.keys(this.records).sort();
+        if (recordDates.length > 0) {
+          const firstRecordDate = new Date(recordDates[0]);
+          const diffTime = Math.abs(new Date() - firstRecordDate);
+          daysSinceStart = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+        
+        return daysSinceStart > 0 ? (totalDays / daysSinceStart) * 100 : 0;
       },
       
       // 关闭习惯详情模态框
@@ -735,6 +1010,7 @@
         setTimeout(() => {
           modal.classList.remove('flex');
           modal.classList.add('hidden');
+          this.currentDetailHabitId = null; // 清空当前查看的习惯ID
         }, 300);
       },
       
@@ -789,28 +1065,35 @@
         };
       },
       
-      // 渲染习惯详情图表
-      renderHabitDetailChart(dates, counts, habitType) {
+      // 渲染习惯详情图表（支持不同时间周期）
+      renderHabitDetailChart(habitId, period) {
         const ctx = document.getElementById('habit-detail-chart').getContext('2d');
+        const habit = this.getHabitById(habitId);
+        const habitType = this.getHabitType(habitId);
         
-        // 销毁已存在的图表
+        // 获取指定周期的数据
+        const { dates, counts } = this.getHabitChartData(habitId, period);
+        
+        // 销毁已存在的图表实例
         if (this.habitDetailChart) {
           this.habitDetailChart.destroy();
         }
         
         // 创建新图表
         this.habitDetailChart = new Chart(ctx, {
-          type: 'bar',
+          type: 'line',
           data: {
             labels: dates,
             datasets: [{
-              label: habitType === 'good' ? '完成次数' : '记录次数',
+              label: '完成次数',
               data: counts,
-              backgroundColor: habitType === 'good' ? 'rgba(59, 130, 246, 0.6)' : 'rgba(239, 68, 68, 0.6)',
-              borderColor: habitType === 'good' ? 'rgba(59, 130, 246, 1)' : 'rgba(239, 68, 68, 1)',
-              borderWidth: 1,
-              borderRadius: 4,
-              borderSkipped: false
+              borderColor: habitType === 'good' ? '#4f46e5' : '#ef4444',
+              backgroundColor: habitType === 'good' ? 'rgba(79, 70, 229, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+              tension: 0.3,
+              fill: true,
+              pointBackgroundColor: habitType === 'good' ? '#4f46e5' : '#ef4444',
+              pointRadius: 3,
+              pointHoverRadius: 5
             }]
           },
           options: {
@@ -823,31 +1106,44 @@
               tooltip: {
                 mode: 'index',
                 intersect: false,
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                titleColor: '#fff',
+                bodyColor: '#fff',
+                borderColor: 'rgba(255, 255, 255, 0.2)',
+                borderWidth: 1,
+                padding: 10,
+                cornerRadius: 4,
                 callbacks: {
                   label: function(context) {
-                    return `${habitType === 'good' ? '完成' : '记录'}: ${context.parsed.y} 次`;
+                    return `完成: ${context.parsed.y} 次`;
                   }
                 }
               }
             },
             scales: {
-              y: {
-                beginAtZero: true,
-                ticks: {
-                  stepSize: 1
-                },
-                grid: {
-                  drawBorder: false
-                }
-              },
               x: {
                 grid: {
                   display: false
                 },
                 ticks: {
+                  font: {
+                    size: 10
+                  },
                   maxRotation: 0,
                   autoSkip: true,
-                  maxTicksLimit: 10
+                  maxTicksLimit: period === 'year' ? 12 : 7
+                }
+              },
+              y: {
+                beginAtZero: true,
+                grid: {
+                  color: 'rgba(0, 0, 0, 0.05)'
+                },
+                ticks: {
+                  font: {
+                    size: 10
+                  },
+                  stepSize: 1
                 }
               }
             },
@@ -862,6 +1158,63 @@
             }
           }
         });
+      },
+      
+      // 获取习惯图表数据（根据指定周期）
+      getHabitChartData(habitId, period) {
+        const today = new Date();
+        const dates = [];
+        const counts = [];
+        
+        if (period === 'week') {
+          // 本周数据
+          for (let i = 6; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(date.getDate() - i);
+            const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            const dayOfWeek = ['日', '一', '二', '三', '四', '五', '六'][date.getDay()];
+            dates.push(`周${dayOfWeek}`);
+            
+            if (this.records[dateStr] && this.records[dateStr][habitId]) {
+              counts.push(this.records[dateStr][habitId]);
+            } else {
+              counts.push(0);
+            }
+          }
+        } else if (period === 'month') {
+          // 本月数据（最近30天）
+          for (let i = 29; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(date.getDate() - i);
+            const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            dates.push(date.getDate());
+            
+            if (this.records[dateStr] && this.records[dateStr][habitId]) {
+              counts.push(this.records[dateStr][habitId]);
+            } else {
+              counts.push(0);
+            }
+          }
+        } else if (period === 'year') {
+          // 本年数据（按月）
+          const currentYear = today.getFullYear();
+          for (let month = 1; month <= 12; month++) {
+            const monthStr = String(month).padStart(2, '0');
+            dates.push(`${month}月`);
+            
+            // 计算该月的总完成量
+            let monthTotal = 0;
+            Object.keys(this.records).forEach(dateStr => {
+              if (dateStr.startsWith(`${currentYear}-${monthStr}`) && this.records[dateStr][habitId]) {
+                monthTotal += this.records[dateStr][habitId];
+              }
+            });
+            
+            counts.push(monthTotal);
+          }
+        }
+        
+        return { dates, counts };
       },
       
       // 渲染习惯统计
@@ -1247,6 +1600,51 @@
           } else {
             header.classList.add('py-3', 'shadow-md');
             header.classList.remove('py-2', 'shadow-lg');
+          }
+        });
+        
+        // 为图表周期按钮添加事件监听器
+        if (document.getElementById('chart-period-week')) {
+          document.getElementById('chart-period-week').addEventListener('click', () => {
+            if (this.currentDetailHabitId) {
+              this.renderHabitDetailChart(this.currentDetailHabitId, 'week');
+              this.updateChartPeriodButtons('week');
+            }
+          });
+        }
+        
+        if (document.getElementById('chart-period-month')) {
+          document.getElementById('chart-period-month').addEventListener('click', () => {
+            if (this.currentDetailHabitId) {
+              this.renderHabitDetailChart(this.currentDetailHabitId, 'month');
+              this.updateChartPeriodButtons('month');
+            }
+          });
+        }
+        
+        if (document.getElementById('chart-period-year')) {
+          document.getElementById('chart-period-year').addEventListener('click', () => {
+            if (this.currentDetailHabitId) {
+              this.renderHabitDetailChart(this.currentDetailHabitId, 'year');
+              this.updateChartPeriodButtons('year');
+            }
+          });
+        }
+      },
+      
+      // 更新图表周期按钮的样式
+      updateChartPeriodButtons(activePeriod) {
+        const buttons = ['week', 'month', 'year'];
+        buttons.forEach(period => {
+          const button = document.getElementById(`chart-period-${period}`);
+          if (button) {
+            if (period === activePeriod) {
+              button.classList.add('bg-primary', 'text-white');
+              button.classList.remove('bg-gray-100', 'text-gray-700');
+            } else {
+              button.classList.remove('bg-primary', 'text-white');
+              button.classList.add('bg-gray-100', 'text-gray-700');
+            }
           }
         });
       }
