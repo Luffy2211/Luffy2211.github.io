@@ -1,6 +1,18 @@
 # 吴恩达Agent教程笔记 
 https://www.bilibili.com/video/BV1DfrdByE2H/?spm_id_from=333.1387.favlist.content.click&vd_source=b2e33e56eb1d028eeabe864130de93cc
 
+- [吴恩达Agent教程笔记](#吴恩达agent教程笔记)
+  - [模块1：Introduction to Agentic Workflows](#模块1introduction-to-agentic-workflows)
+    - [01 Welcome](#01-welcome)
+    - [02 What is Agent？](#02-what-is-agent)
+    - [03 Degrees of autonomy](#03-degrees-of-autonomy)
+    - [04 Benefits of Agentic AI](#04-benefits-of-agentic-ai)
+    - [05 Agentic AI applications](#05-agentic-ai-applications)
+    - [06 Task decomposition: Identifying the steps in a workflow](#06-task-decomposition-identifying-the-steps-in-a-workflow)
+    - [07 Evaluating  Agentic AI(evals)](#07-evaluating--agentic-aievals)
+    - [08 Agentic design patterns](#08-agentic-design-patterns)
+
+
 ## 模块1：Introduction to Agentic Workflows
 ### 01 Welcome
 
