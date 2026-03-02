@@ -1,2 +1,23 @@
+# 站点配置
+title: 我的学习笔记
+description: 个人学习笔记和技术文档
+baseurl: ""
+url: "https://Luffy2211.github.io"
+
+# 构建配置
 markdown: kramdown
 encoding: utf-8
+
+# 主题配置
+theme: minima
+
+# 插件
+gems:
+  - jekyll-feed
+  - jekyll-seo-tag
+
+# 导航菜单
+header_pages:
+  - index.md
+  - AI_comic_creation.md
+  - 吴恩达Agent教程笔记.md
